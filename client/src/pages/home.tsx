@@ -63,19 +63,17 @@ export default function Home() {
           
           {/* Hero Section */}
           <section className="text-center mb-12">
-            {/* Central dog image */}
-            <div className="mb-8">
+            {/* Title with Maggie image */}
+            <div className="flex items-center justify-center gap-4 mb-6">
               <img 
                 src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
                 alt="Maggie the friendly dog reading a book" 
-                className="w-64 h-64 sm:w-80 sm:h-80 mx-auto object-cover"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
               />
+              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
+                Ask Maggie Bible Questions
+              </h1>
             </div>
-
-            {/* Main heading */}
-            <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
-              Ask Maggie Bible Questions
-            </h1>
 
             {/* Explanatory text */}
             <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
