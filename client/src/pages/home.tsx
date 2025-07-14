@@ -31,6 +31,7 @@ export default function Home() {
 
   // Update question when transcript changes
   useEffect(() => {
+    console.log('Transcript changed:', transcript, 'Voice mode:', isVoiceMode);
     if (transcript && isVoiceMode) {
       console.log('Speech recognized:', transcript);
       setQuestion(transcript);
@@ -61,19 +62,34 @@ export default function Home() {
 
   const startListening = () => {
     if (!browserSupportsSpeechRecognition) {
+      console.log('Speech recognition not supported');
       return;
     }
     
+    console.log('Starting speech recognition...');
     setIsVoiceMode(true);
     resetTranscript();
-    SpeechRecognition.startListening({
-      continuous: true,
-      language: 'en-US',
-      interimResults: true
-    });
+    
+    // Check microphone access first
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        console.log('Microphone access granted');
+        stream.getTracks().forEach(track => track.stop());
+        
+        SpeechRecognition.startListening({
+          continuous: true,
+          language: 'en-US',
+          interimResults: true
+        });
+      })
+      .catch(error => {
+        console.error('Microphone access denied:', error);
+        setIsVoiceMode(false);
+      });
   };
 
   const stopListening = () => {
+    console.log('Stopping speech recognition...');
     SpeechRecognition.stopListening();
     setIsVoiceMode(false);
   };
@@ -185,12 +201,17 @@ export default function Home() {
                 )}
                 
                 {/* Debug: Show what's being captured */}
-                {browserSupportsSpeechRecognition && transcript && (
+                {browserSupportsSpeechRecognition && (
                   <div className="mt-2 p-3 bg-gray-100 rounded-md border">
-                    <div className="text-xs text-gray-600 mb-1">Debug - What I heard:</div>
-                    <div className="text-sm font-mono text-gray-800">"{transcript}"</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Length: {transcript.length} characters | Voice mode: {isVoiceMode ? 'ON' : 'OFF'}
+                    <div className="text-xs text-gray-600 mb-1">Debug Info:</div>
+                    <div className="text-sm space-y-1">
+                      <div>Listening: {listening ? 'YES' : 'NO'}</div>
+                      <div>Voice mode: {isVoiceMode ? 'ON' : 'OFF'}</div>
+                      <div>Transcript: "{transcript || 'None'}"</div>
+                      <div>Transcript length: {transcript ? transcript.length : 0} characters</div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Check browser console (F12) for detailed logs
                     </div>
                   </div>
                 )}
