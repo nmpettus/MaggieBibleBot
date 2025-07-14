@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Book, Heart, Loader2 } from "lucide-react";
+import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 interface BiblicalResponse {
   id: number;
@@ -18,6 +19,22 @@ interface BiblicalResponse {
 export default function Home() {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState<BiblicalResponse | null>(null);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  
+  // Speech recognition hook
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+
+  // Update question when transcript changes
+  useEffect(() => {
+    if (transcript && isVoiceMode) {
+      setQuestion(transcript);
+    }
+  }, [transcript, isVoiceMode]);
 
   const askMaggieMutation = useMutation({
     mutationFn: async (questionText: string) => {
@@ -39,6 +56,24 @@ export default function Home() {
 
   const handleGoBack = () => {
     window.history.back();
+  };
+
+  const startListening = () => {
+    if (!browserSupportsSpeechRecognition) {
+      return;
+    }
+    
+    setIsVoiceMode(true);
+    resetTranscript();
+    SpeechRecognition.startListening({
+      continuous: false,
+      language: 'en-US'
+    });
+  };
+
+  const stopListening = () => {
+    SpeechRecognition.stopListening();
+    setIsVoiceMode(false);
   };
 
   return (
@@ -86,17 +121,58 @@ export default function Home() {
             <div className="max-w-2xl mx-auto">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Question input */}
-                <div>
+                <div className="relative">
                   <Textarea
                     id="question"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     rows={4}
                     placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                    className="w-full resize-none border border-gray-300 rounded-md p-4 text-lg shadow-md focus:shadow-lg transition-shadow duration-200"
+                    className="w-full resize-none border border-gray-300 rounded-md p-4 pr-12 text-lg shadow-md focus:shadow-lg transition-shadow duration-200"
                     disabled={askMaggieMutation.isPending}
                   />
+                  {browserSupportsSpeechRecognition && (
+                    <Button
+                      type="button"
+                      onClick={listening ? stopListening : startListening}
+                      className={`absolute right-2 top-2 p-2 rounded-full transition-all duration-200 ${
+                        listening 
+                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                          : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
+                      }`}
+                      disabled={askMaggieMutation.isPending}
+                      title={listening ? "Stop recording" : "Start voice input"}
+                    >
+                      {listening ? (
+                        <MicOff className="w-4 h-4" />
+                      ) : (
+                        <Mic className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
+                
+                {/* Voice status */}
+                {browserSupportsSpeechRecognition && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    {listening ? (
+                      <span className="text-green-600 font-medium">
+                        🎤 Listening... Speak clearly into your microphone
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">
+                        💡 Click the microphone to speak your question aloud
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Fallback for unsupported browsers */}
+                {!browserSupportsSpeechRecognition && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    Speech recognition not supported in this browser. Please type your question.
+                  </div>
+                )}
 
                 {/* Submit button */}
                 <div className="flex justify-center">
