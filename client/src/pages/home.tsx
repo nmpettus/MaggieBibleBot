@@ -73,7 +73,7 @@ export default function Home() {
             </div>
 
             {/* Main heading */}
-            <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-300 to-red-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
               Ask Maggie Bible Questions
             </h1>
 
