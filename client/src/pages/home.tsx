@@ -42,7 +42,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
       {/* Navigation Header */}
       <header className="w-full py-4 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
@@ -91,8 +91,8 @@ export default function Home() {
 
           {/* Question Form */}
           <section className="mb-12">
-            <Card className="shadow-lg border-gray-100">
-              <CardContent className="p-6 sm:p-8">
+            <Card className="shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl">
+              <CardContent className="p-8 sm:p-10">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Question input */}
                   <div>
@@ -105,7 +105,7 @@ export default function Home() {
                       onChange={(e) => setQuestion(e.target.value)}
                       rows={4}
                       placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                      className="resize-none"
+                      className="resize-none shadow-inner border-2 border-blue-100 focus:border-blue-300 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all duration-200"
                       disabled={askMaggieMutation.isPending}
                     />
                   </div>
@@ -115,7 +115,7 @@ export default function Home() {
                     <Button 
                       type="submit"
                       disabled={!question.trim() || askMaggieMutation.isPending}
-                      className="bg-primary hover:bg-blue-700 text-primary-foreground font-semibold px-8 py-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none"
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-10 py-4 rounded-xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300 disabled:transform-none disabled:opacity-50"
                     >
                       {askMaggieMutation.isPending ? (
                         <>
