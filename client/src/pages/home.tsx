@@ -62,27 +62,31 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           
           {/* Hero Section */}
-          <section className="text-center mb-12">
-            {/* Central dog image */}
-            <div className="mb-8">
-              <img 
-                src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
-                alt="Maggie the friendly dog reading a book" 
-                className="w-64 h-64 sm:w-80 sm:h-80 mx-auto rounded-full shadow-2xl object-cover border-4 border-white"
-              />
+          <section className="mb-12">
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+              {/* Small round logo */}
+              <div className="flex-shrink-0">
+                <img 
+                  src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
+                  alt="Maggie the friendly dog reading a book" 
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full shadow-lg object-cover border-3 border-white"
+                />
+              </div>
+              
+              <div className="flex-1 text-center sm:text-left">
+                {/* Main heading */}
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
+                  Ask Maggie Bible Questions
+                </h1>
+
+                {/* Explanatory text */}
+                <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
+                  Answers are based on the New Testament covenant of Grace and God's Love as taught by{" "}
+                  <span className="font-semibold text-foreground">Tim Keller</span>,{" "}
+                  <span className="font-semibold text-foreground">Andrew Farley</span>, and others.
+                </p>
+              </div>
             </div>
-
-            {/* Main heading */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
-              Ask Maggie Bible Questions
-            </h1>
-
-            {/* Explanatory text */}
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
-              Answers are based on the New Testament covenant of Grace and God's Love as taught by{" "}
-              <span className="font-semibold text-foreground">Tim Keller</span>,{" "}
-              <span className="font-semibold text-foreground">Andrew Farley</span>, and others.
-            </p>
           </section>
 
           {/* Question Form */}
