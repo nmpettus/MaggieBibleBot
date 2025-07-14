@@ -20,6 +20,7 @@ export default function Home() {
   const [response, setResponse] = useState<BiblicalResponse | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -36,11 +37,26 @@ export default function Home() {
         const transcript = event.results[0][0].transcript;
         setQuestion(prev => prev + (prev ? ' ' : '') + transcript);
         setIsListening(false);
+        setSpeechError(null);
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
+        
+        let errorMessage = "Voice recognition failed. Please try again.";
+        if (event.error === 'network') {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (event.error === 'no-speech') {
+          errorMessage = "No speech detected. Please try speaking again.";
+        } else if (event.error === 'not-allowed') {
+          errorMessage = "Microphone access denied. Please allow microphone access.";
+        }
+        
+        setSpeechError(errorMessage);
+        
+        // Clear error after 5 seconds
+        setTimeout(() => setSpeechError(null), 5000);
       };
 
       recognitionRef.current.onend = () => {
@@ -78,8 +94,14 @@ export default function Home() {
       recognitionRef.current?.stop();
       setIsListening(false);
     } else {
-      recognitionRef.current?.start();
-      setIsListening(true);
+      setSpeechError(null);
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (error) {
+        setSpeechError("Could not start voice recognition. Please try again.");
+        setTimeout(() => setSpeechError(null), 5000);
+      }
     }
   };
 
@@ -144,10 +166,11 @@ export default function Home() {
                       onClick={toggleSpeechRecognition}
                       className={`absolute right-2 top-2 p-2 rounded-full ${
                         isListening 
-                          ? 'bg-red-500 hover:bg-red-600 text-white' 
+                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
                           : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
                       }`}
                       disabled={askMaggieMutation.isPending}
+                      title={isListening ? "Stop recording" : "Start voice input"}
                     >
                       {isListening ? (
                         <MicOff className="w-4 h-4" />
@@ -157,6 +180,22 @@ export default function Home() {
                     </Button>
                   )}
                 </div>
+                
+                {/* Speech recognition status */}
+                {speechError && (
+                  <Alert variant="destructive" className="mt-2">
+                    <AlertDescription>
+                      {speechError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {isListening && (
+                  <div className="mt-2 text-sm text-gray-600 flex items-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                    Listening... Speak your question now.
+                  </div>
+                )}
 
                 {/* Submit button */}
                 <div className="flex justify-center">
