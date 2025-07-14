@@ -20,6 +20,8 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState<BiblicalResponse | null>(null);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string>("");
   
   // Speech recognition hook
   const {
@@ -28,6 +30,32 @@ export default function Home() {
     resetTranscript,
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
+
+  // Get available audio devices
+  useEffect(() => {
+    const getAudioDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+        console.log('Available audio devices:', audioInputs);
+        setAudioDevices(audioInputs);
+        
+        // Auto-select AirPods if found
+        const airpods = audioInputs.find(device => 
+          device.label.toLowerCase().includes('airpods') || 
+          device.label.toLowerCase().includes('bluetooth')
+        );
+        if (airpods) {
+          setSelectedDevice(airpods.deviceId);
+          console.log('Auto-selected AirPods:', airpods.label);
+        }
+      } catch (error) {
+        console.error('Error getting audio devices:', error);
+      }
+    };
+    
+    getAudioDevices();
+  }, []);
 
   // Update question when transcript changes
   useEffect(() => {
@@ -70,10 +98,18 @@ export default function Home() {
     setIsVoiceMode(true);
     resetTranscript();
     
-    // Check microphone access first
-    navigator.mediaDevices.getUserMedia({ audio: true })
+    // Check microphone access with specific device if selected
+    const constraints = {
+      audio: selectedDevice ? { deviceId: { exact: selectedDevice } } : true
+    };
+    
+    console.log('Using audio constraints:', constraints);
+    
+    navigator.mediaDevices.getUserMedia(constraints)
       .then(stream => {
         console.log('Microphone access granted');
+        const track = stream.getAudioTracks()[0];
+        console.log('Active audio track:', track.label);
         stream.getTracks().forEach(track => track.stop());
         
         SpeechRecognition.startListening({
@@ -200,6 +236,25 @@ export default function Home() {
                   </div>
                 )}
                 
+                {/* Audio Device Selection */}
+                {browserSupportsSpeechRecognition && audioDevices.length > 1 && (
+                  <div className="mt-2 p-3 bg-blue-50 rounded-md border">
+                    <div className="text-xs text-blue-600 mb-2">Select Microphone:</div>
+                    <select 
+                      value={selectedDevice} 
+                      onChange={(e) => setSelectedDevice(e.target.value)}
+                      className="w-full text-sm p-2 border rounded"
+                    >
+                      <option value="">Default microphone</option>
+                      {audioDevices.map(device => (
+                        <option key={device.deviceId} value={device.deviceId}>
+                          {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Debug: Show what's being captured */}
                 {browserSupportsSpeechRecognition && (
                   <div className="mt-2 p-3 bg-gray-100 rounded-md border">
@@ -209,6 +264,7 @@ export default function Home() {
                       <div>Voice mode: {isVoiceMode ? 'ON' : 'OFF'}</div>
                       <div>Transcript: "{transcript || 'None'}"</div>
                       <div>Transcript length: {transcript ? transcript.length : 0} characters</div>
+                      <div>Selected device: {selectedDevice ? audioDevices.find(d => d.deviceId === selectedDevice)?.label || 'Unknown' : 'Default'}</div>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
                       Check browser console (F12) for detailed logs
