@@ -83,7 +83,7 @@ export default function Home() {
                 <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
                   Answers are based on the New Testament covenant of Grace and God's Love as taught by{" "}
                   <span className="font-semibold text-foreground">Tim Keller</span>,{" "}
-                  <span className="font-semibold text-foreground">Andrew Farley</span>, and others.
+                  <span className="font-semibold text-foreground">Andrew Farley</span>, and other conservative evangelical pastors and experts.
                 </p>
               </div>
             </div>
