@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, Book, Heart, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface BiblicalResponse {
@@ -18,64 +18,6 @@ interface BiblicalResponse {
 export default function Home() {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState<BiblicalResponse | null>(null);
-  const [isListening, setIsListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(false);
-  const [speechError, setSpeechError] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null);
-
-  useEffect(() => {
-    // Check if speech recognition is supported
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      setSpeechSupported(true);
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
-
-      recognitionRef.current.onstart = () => {
-        setIsListening(true);
-        setSpeechError(null);
-      };
-
-      recognitionRef.current.onresult = (event: any) => {
-        try {
-          const transcript = event.results[0][0].transcript;
-          if (transcript.trim()) {
-            setQuestion(prev => prev + (prev ? ' ' : '') + transcript);
-            setSpeechError(null);
-          }
-        } catch (error) {
-          console.error('Error processing speech result:', error);
-          setSpeechError("Could not process speech. Please try again.");
-        }
-        setIsListening(false);
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        
-        let errorMessage = "Voice recognition unavailable. Please type your question.";
-        if (event.error === 'network') {
-          errorMessage = "Speech recognition requires internet connection. Please type your question.";
-        } else if (event.error === 'no-speech') {
-          errorMessage = "No speech detected. Please try speaking louder.";
-        } else if (event.error === 'not-allowed') {
-          errorMessage = "Microphone access denied. Please allow microphone access in your browser.";
-        }
-        
-        setSpeechError(errorMessage);
-        
-        // Clear error after 8 seconds
-        setTimeout(() => setSpeechError(null), 8000);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-  }, []);
 
   const askMaggieMutation = useMutation({
     mutationFn: async (questionText: string) => {
@@ -97,37 +39,6 @@ export default function Home() {
 
   const handleGoBack = () => {
     window.history.back();
-  };
-
-  const toggleSpeechRecognition = () => {
-    if (!speechSupported) {
-      setSpeechError("Speech recognition is not supported in this browser.");
-      setTimeout(() => setSpeechError(null), 5000);
-      return;
-    }
-    
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      setSpeechError(null);
-      try {
-        // Request microphone permission first
-        navigator.mediaDevices?.getUserMedia({ audio: true })
-          .then(() => {
-            recognitionRef.current?.start();
-          })
-          .catch((error) => {
-            console.error('Microphone access error:', error);
-            setSpeechError("Microphone access required. Please allow microphone access.");
-            setTimeout(() => setSpeechError(null), 8000);
-          });
-      } catch (error) {
-        console.error('Speech recognition start error:', error);
-        setSpeechError("Voice recognition unavailable. Please type your question.");
-        setTimeout(() => setSpeechError(null), 8000);
-      }
-    }
   };
 
   return (
@@ -175,59 +86,17 @@ export default function Home() {
             <div className="max-w-2xl mx-auto">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Question input */}
-                <div className="relative">
+                <div>
                   <Textarea
                     id="question"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     rows={4}
                     placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                    className="w-full resize-none border border-gray-300 rounded-md p-4 pr-12 text-lg"
+                    className="w-full resize-none border border-gray-300 rounded-md p-4 text-lg"
                     disabled={askMaggieMutation.isPending}
                   />
-                  {speechSupported && (
-                    <Button
-                      type="button"
-                      onClick={toggleSpeechRecognition}
-                      className={`absolute right-2 top-2 p-2 rounded-full ${
-                        isListening 
-                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                      }`}
-                      disabled={askMaggieMutation.isPending}
-                      title={isListening ? "Stop recording" : "Start voice input"}
-                    >
-                      {isListening ? (
-                        <MicOff className="w-4 h-4" />
-                      ) : (
-                        <Mic className="w-4 h-4" />
-                      )}
-                    </Button>
-                  )}
                 </div>
-                
-                {/* Speech recognition status */}
-                {speechError && (
-                  <Alert variant="destructive" className="mt-2">
-                    <AlertDescription>
-                      {speechError}
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                {isListening && (
-                  <div className="mt-2 text-sm text-gray-600 flex items-center">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-                    Listening... Speak your question clearly.
-                  </div>
-                )}
-                
-                {/* Fallback hint for speech recognition issues */}
-                {speechSupported && !isListening && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    💡 Tip: Click the microphone to speak your question, or simply type it out
-                  </div>
-                )}
 
                 {/* Submit button */}
                 <div className="flex justify-center">

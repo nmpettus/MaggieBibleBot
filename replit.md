@@ -91,3 +91,13 @@ The application follows a modern full-stack architecture with clear separation b
 - `tsconfig.json`: TypeScript configuration with path mapping
 
 The application is designed to be easily deployable on Replit with automatic environment detection and graceful fallbacks for missing dependencies.
+
+## Recent Changes
+
+### January 15, 2025
+- Successfully duplicated the original Maggie Bible Questions app
+- Modified layout to move Maggie's image to a small circular logo next to the title
+- Added blue-to-red gradient text effect on the main heading
+- Updated explanatory text to reference "conservative evangelical pastors and experts"
+- Attempted to implement speech recognition feature but removed due to network connectivity issues
+- App is fully functional for biblical Q&A with text input
