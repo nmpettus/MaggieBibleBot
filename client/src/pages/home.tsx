@@ -32,6 +32,7 @@ export default function Home() {
   // Update question when transcript changes
   useEffect(() => {
     if (transcript && isVoiceMode) {
+      console.log('Speech recognized:', transcript);
       setQuestion(transcript);
     }
   }, [transcript, isVoiceMode]);
@@ -169,7 +170,7 @@ export default function Home() {
                   <div className="mt-2 text-sm text-gray-600">
                     {listening ? (
                       <div className="text-green-600 font-medium">
-                        🎤 Listening... Speak clearly into your microphone
+                        🎤 Listening... Speak clearly into your AirPods microphone
                         <br />
                         <span className="text-xs text-gray-500">
                           Recording will auto-stop after 30 seconds or click the microphone to stop
@@ -180,6 +181,17 @@ export default function Home() {
                         💡 Click the microphone to speak your question aloud
                       </span>
                     )}
+                  </div>
+                )}
+                
+                {/* Debug: Show what's being captured */}
+                {browserSupportsSpeechRecognition && transcript && (
+                  <div className="mt-2 p-3 bg-gray-100 rounded-md border">
+                    <div className="text-xs text-gray-600 mb-1">Debug - What I heard:</div>
+                    <div className="text-sm font-mono text-gray-800">"{transcript}"</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Length: {transcript.length} characters | Voice mode: {isVoiceMode ? 'ON' : 'OFF'}
+                    </div>
                   </div>
                 )}
                 
