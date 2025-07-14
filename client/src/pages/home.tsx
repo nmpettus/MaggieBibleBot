@@ -66,8 +66,9 @@ export default function Home() {
     setIsVoiceMode(true);
     resetTranscript();
     SpeechRecognition.startListening({
-      continuous: false,
-      language: 'en-US'
+      continuous: true,
+      language: 'en-US',
+      interimResults: true
     });
   };
 
@@ -75,6 +76,17 @@ export default function Home() {
     SpeechRecognition.stopListening();
     setIsVoiceMode(false);
   };
+
+  // Auto-stop listening after 30 seconds to prevent endless recording
+  useEffect(() => {
+    if (listening) {
+      const timeout = setTimeout(() => {
+        stopListening();
+      }, 30000); // 30 second timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [listening]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -156,9 +168,13 @@ export default function Home() {
                 {browserSupportsSpeechRecognition && (
                   <div className="mt-2 text-sm text-gray-600">
                     {listening ? (
-                      <span className="text-green-600 font-medium">
+                      <div className="text-green-600 font-medium">
                         🎤 Listening... Speak clearly into your microphone
-                      </span>
+                        <br />
+                        <span className="text-xs text-gray-500">
+                          Recording will auto-stop after 30 seconds or click the microphone to stop
+                        </span>
+                      </div>
                     ) : (
                       <span className="text-gray-500">
                         💡 Click the microphone to speak your question aloud
