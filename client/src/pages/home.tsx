@@ -42,7 +42,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
+    <div className="min-h-screen bg-white">
       {/* Navigation Header */}
       <header className="w-full py-4 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
@@ -62,85 +62,74 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           
           {/* Hero Section */}
-          <section className="mb-12">
-            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-              {/* Small round logo */}
-              <div className="flex-shrink-0">
-                <img 
-                  src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
-                  alt="Maggie the friendly dog reading a book" 
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full shadow-lg object-cover border-3 border-white"
-                />
-              </div>
-              
-              <div className="flex-1 text-center sm:text-left">
-                {/* Main heading */}
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
-                  Ask Maggie Bible Questions
-                </h1>
-
-                {/* Explanatory text */}
-                <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
-                  Answers are based on the New Testament covenant of Grace and God's Love as taught by{" "}
-                  <span className="font-semibold text-foreground">Tim Keller</span>,{" "}
-                  <span className="font-semibold text-foreground">Andrew Farley</span>, and other conservative evangelical pastors and experts.
-                </p>
-              </div>
+          <section className="text-center mb-12">
+            {/* Central dog image */}
+            <div className="mb-8">
+              <img 
+                src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
+                alt="Maggie the friendly dog reading a book" 
+                className="w-64 h-64 sm:w-80 sm:h-80 mx-auto object-cover"
+              />
             </div>
+
+            {/* Main heading */}
+            <h1 className="text-4xl sm:text-5xl font-bold text-black mb-6">
+              Ask Maggie Bible Questions
+            </h1>
+
+            {/* Explanatory text */}
+            <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
+              Answers are based on the New Testament covenant of Grace and God's Love as taught by Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts.
+            </p>
           </section>
 
           {/* Question Form */}
           <section className="mb-12">
-            <Card className="shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl">
-              <CardContent className="p-8 sm:p-10">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Question input */}
-                  <div>
-                    <label htmlFor="question" className="block text-sm font-semibold text-foreground mb-3">
-                      What Bible question would you like to ask Maggie?
-                    </label>
-                    <Textarea
-                      id="question"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      rows={4}
-                      placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                      className="resize-none shadow-inner border-2 border-blue-100 focus:border-blue-300 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all duration-200"
-                      disabled={askMaggieMutation.isPending}
-                    />
-                  </div>
+            <div className="max-w-2xl mx-auto">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Question input */}
+                <div>
+                  <Textarea
+                    id="question"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    rows={4}
+                    placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
+                    className="w-full resize-none border border-gray-300 rounded-md p-4 text-lg"
+                    disabled={askMaggieMutation.isPending}
+                  />
+                </div>
 
-                  {/* Submit button */}
-                  <div className="flex justify-center">
-                    <Button 
-                      type="submit"
-                      disabled={!question.trim() || askMaggieMutation.isPending}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-10 py-4 rounded-xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300 disabled:transform-none disabled:opacity-50"
-                    >
-                      {askMaggieMutation.isPending ? (
-                        <>
-                          <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                          Asking Maggie...
-                        </>
-                      ) : (
-                        "Ask Maggie"
-                      )}
-                    </Button>
-                  </div>
+                {/* Submit button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit"
+                    disabled={!question.trim() || askMaggieMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-md"
+                  >
+                    {askMaggieMutation.isPending ? (
+                      <>
+                        <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                        Asking Maggie...
+                      </>
+                    ) : (
+                      "Ask Maggie"
+                    )}
+                  </Button>
+                </div>
 
-                  {/* Error display */}
-                  {askMaggieMutation.error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>
-                        {askMaggieMutation.error instanceof Error 
-                          ? askMaggieMutation.error.message 
-                          : "Something went wrong. Please try again."}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </form>
-              </CardContent>
-            </Card>
+                {/* Error display */}
+                {askMaggieMutation.error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      {askMaggieMutation.error instanceof Error 
+                        ? askMaggieMutation.error.message 
+                        : "Something went wrong. Please try again."}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </form>
+            </div>
           </section>
 
           {/* Response Display */}
