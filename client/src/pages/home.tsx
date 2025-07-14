@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Book, Heart, Loader2 } from "lucide-react";
+import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface BiblicalResponse {
@@ -18,6 +18,36 @@ interface BiblicalResponse {
 export default function Home() {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState<BiblicalResponse | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Check if speech recognition is supported
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      setSpeechSupported(true);
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setQuestion(prev => prev + (prev ? ' ' : '') + transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
 
   const askMaggieMutation = useMutation({
     mutationFn: async (questionText: string) => {
@@ -39,6 +69,18 @@ export default function Home() {
 
   const handleGoBack = () => {
     window.history.back();
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (!speechSupported) return;
+    
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
   };
 
   return (
@@ -86,16 +128,34 @@ export default function Home() {
             <div className="max-w-2xl mx-auto">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Question input */}
-                <div>
+                <div className="relative">
                   <Textarea
                     id="question"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     rows={4}
                     placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                    className="w-full resize-none border border-gray-300 rounded-md p-4 text-lg"
+                    className="w-full resize-none border border-gray-300 rounded-md p-4 pr-12 text-lg"
                     disabled={askMaggieMutation.isPending}
                   />
+                  {speechSupported && (
+                    <Button
+                      type="button"
+                      onClick={toggleSpeechRecognition}
+                      className={`absolute right-2 top-2 p-2 rounded-full ${
+                        isListening 
+                          ? 'bg-red-500 hover:bg-red-600 text-white' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      }`}
+                      disabled={askMaggieMutation.isPending}
+                    >
+                      {isListening ? (
+                        <MicOff className="w-4 h-4" />
+                      ) : (
+                        <Mic className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
 
                 {/* Submit button */}
