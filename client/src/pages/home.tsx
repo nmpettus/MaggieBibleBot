@@ -112,7 +112,8 @@ export default function Home() {
         let message = "Voice recognition failed. Please try again.";
         switch (event.error) {
           case 'network':
-            message = "Network connection required for speech recognition. Please check your connection.";
+            // Network errors are common even with good connection
+            message = "Speech recognition temporarily unavailable. You can continue typing your question.";
             break;
           case 'no-speech':
             message = "No speech detected. Please speak louder and try again.";
@@ -122,15 +123,14 @@ export default function Home() {
             setPermissionGranted(false);
             break;
           case 'service-not-allowed':
-            message = "Speech recognition service not available. Please try again later.";
+            message = "Speech recognition service not available in this environment.";
             break;
           case 'aborted':
-            message = "Speech recognition was stopped.";
-            break;
+            return; // Don't show error for manual stops
         }
         
         setStatusMessage(message);
-        setTimeout(() => setStatusMessage(null), 5000);
+        setTimeout(() => setStatusMessage(null), 4000);
       };
 
       recognitionRef.current.onend = () => {
@@ -157,7 +157,9 @@ export default function Home() {
 
     if (isListening) {
       // Stop listening
-      recognitionRef.current?.stop();
+      recognitionRef.current?.abort();
+      setStatusMessage("Speech recognition stopped.");
+      setTimeout(() => setStatusMessage(null), 2000);
       return;
     }
 
@@ -174,13 +176,23 @@ export default function Home() {
       }
     }
 
-    // Start recognition
+    // Start recognition with retry logic
     try {
       setStatusMessage(null);
+      
+      // Add a small delay before starting to avoid rapid fire attempts
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       recognitionRef.current?.start();
     } catch (error) {
       console.error('Error starting speech recognition:', error);
-      setStatusMessage("Could not start speech recognition. Please try again.");
+      
+      // If already started, ignore the error
+      if (error.toString().includes('already started')) {
+        return;
+      }
+      
+      setStatusMessage("Speech recognition not available right now. Please type your question.");
       setTimeout(() => setStatusMessage(null), 3000);
     }
   };
@@ -275,7 +287,14 @@ export default function Home() {
                 {/* Helpful tips */}
                 {speechSupported && !isListening && (
                   <div className="mt-2 text-xs text-gray-500">
-                    💡 Click the microphone to speak your question aloud
+                    💡 Click the microphone to speak your question aloud (or just type it)
+                  </div>
+                )}
+                
+                {/* Fallback message for network issues */}
+                {!speechSupported && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Speech recognition not available in this browser. Please type your question.
                   </div>
                 )}
 
