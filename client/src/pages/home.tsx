@@ -732,55 +732,9 @@ export default function Home() {
                           <p className="text-white/80 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">Based on the New Testament covenant of Grace</p>
                         </div>
                         
-                        {/* Enhanced Text-to-speech controls */}
+                        {/* Simplified Listen button only */}
                         {speechSynthesis && (
-                          <div className="flex items-center gap-3 ml-4 shrink-0">
-                            {/* Enhanced Voice selector */}
-                            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                              <SelectTrigger className="glass-card w-48 h-10 text-sm text-white border-0">
-                                <SelectValue placeholder="Select voice" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {/* ElevenLabs voices first (higher quality) */}
-                                {elevenLabsVoices.map((voice, index) => (
-                                  <SelectItem key={`el-${index}`} value={voice.voice_id}>
-                                    {voice.name} {voice.name.toLowerCase() === 'faith' ? '✝️' : voice.name === 'Rachel' ? '🙏' : voice.category === 'childlike' ? '⭐' : voice.category === 'faith-based' ? '✝️' : '🎭'}
-                                  </SelectItem>
-                                ))}
-                                
-                                {/* Browser voices as fallback */}
-                                {!useElevenLabs && availableVoices
-                                  .filter(voice => voice.lang.startsWith('en'))
-                                  .sort((a, b) => {
-                                    const getVoiceScore = (voice: SpeechSynthesisVoice) => {
-                                      const name = voice.name.toLowerCase();
-                                      if (name.includes('junior')) return 100;
-                                      if (name.includes('child') || name.includes('young')) return 90;
-                                      if (name.includes('samantha') || name.includes('anna')) return 80;
-                                      return 0;
-                                    };
-                                    return getVoiceScore(b) - getVoiceScore(a) || a.name.localeCompare(b.name);
-                                  })
-                                  .map((voice, index) => (
-                                    <SelectItem key={`br-${index}`} value={voice.name}>
-                                      {voice.name} {voice.name.toLowerCase().includes('junior') ? '⭐' : '👧'}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            {/* Enhanced Test voice button */}
-                            <Button
-                              onClick={testVoice}
-                              variant="outline"
-                              size="sm"
-                              className="magic-button bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 px-4 py-2"
-                              disabled={isSpeaking}
-                            >
-                              Test
-                            </Button>
-                            
-                            {/* Enhanced Listen button */}
+                          <div className="flex items-center ml-4 shrink-0">
                             <Button
                               onClick={toggleSpeech}
                               size="sm"
