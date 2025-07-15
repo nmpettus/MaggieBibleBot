@@ -712,13 +712,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Enhanced explanatory text with glass card */}
-              <div className="glass-card p-6 max-w-4xl mx-auto">
-                <p className="text-xl text-white/90 leading-relaxed">
-                  Answers are based on the New Testament covenant of Grace and God's Love as taught by 
-                  <span className="font-semibold text-blue-200"> Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts</span>.
-                </p>
-              </div>
+
             </section>
 
           {/* Enhanced Question Form */}
@@ -734,7 +728,7 @@ export default function Home() {
                       onChange={(e) => setQuestion(e.target.value)}
                       rows={4}
                       placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                      className="w-full resize-none bg-white/20 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-lg text-white placeholder:text-white/60 focus:bg-white/30 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
+                      className="w-full resize-none bg-white/20 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-lg text-gray-100 placeholder:text-gray-300 focus:bg-white/30 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
                       disabled={askMaggieMutation.isPending}
                     />
                   </div>
@@ -985,6 +979,16 @@ export default function Home() {
               </Card>
             </div>
           </section>
+
+          {/* Disclaimer at bottom */}
+          <footer className="mt-16 pb-8">
+            <div className="glass-card p-4 max-w-4xl mx-auto">
+              <p className="text-sm text-white/70 leading-relaxed text-center">
+                Answers are based on the New Testament covenant of Grace and God's Love as taught by 
+                <span className="font-semibold text-blue-200"> Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts</span>.
+              </p>
+            </div>
+          </footer>
 
         </div>
       </main>
