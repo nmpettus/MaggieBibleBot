@@ -13,6 +13,7 @@ interface BiblicalResponse {
   question: string;
   answer: string;
   scriptureReferences: string;
+  recommendedResources?: string;
   createdAt: string;
 }
 
@@ -435,11 +436,23 @@ export default function Home() {
                         
                         {/* Scripture references */}
                         {response.scriptureReferences && (
-                          <Card className="bg-white/60 border-l-4 border-l-primary">
+                          <Card className="bg-white/60 border-l-4 border-l-primary mb-4">
                             <CardContent className="p-4">
                               <h4 className="font-semibold text-foreground text-sm mb-2">Related Scripture:</h4>
                               <p className="text-muted-foreground text-sm italic">
                                 {response.scriptureReferences}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        )}
+                        
+                        {/* Age-appropriate resources */}
+                        {response.recommendedResources && (
+                          <Card className="bg-blue-50/60 border-l-4 border-l-blue-500">
+                            <CardContent className="p-4">
+                              <h4 className="font-semibold text-foreground text-sm mb-2">📚 For Further Study (Age-Appropriate):</h4>
+                              <p className="text-muted-foreground text-sm">
+                                {response.recommendedResources}
                               </p>
                             </CardContent>
                           </Card>

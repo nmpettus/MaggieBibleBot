@@ -38,13 +38,14 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async saveQuestion(questionData: InsertQuestion & { answer: string; scriptureReferences?: string }): Promise<Question> {
+  async saveQuestion(questionData: InsertQuestion & { answer: string; scriptureReferences?: string; recommendedResources?: string }): Promise<Question> {
     const id = this.currentQuestionId++;
     const question: Question = {
       id,
       question: questionData.question,
       answer: questionData.answer,
       scriptureReferences: questionData.scriptureReferences || null,
+      recommendedResources: questionData.recommendedResources || null,
       createdAt: new Date(),
     };
     this.questions.set(id, question);

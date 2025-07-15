@@ -23,7 +23,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const savedQuestion = await storage.saveQuestion({
         question: question.trim(),
         answer: aiResponse.answer,
-        scriptureReferences: aiResponse.scriptureReferences
+        scriptureReferences: aiResponse.scriptureReferences,
+        recommendedResources: aiResponse.recommendedResources
       });
 
       res.json({
@@ -31,6 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         question: savedQuestion.question,
         answer: savedQuestion.answer,
         scriptureReferences: savedQuestion.scriptureReferences,
+        recommendedResources: savedQuestion.recommendedResources,
         createdAt: savedQuestion.createdAt
       });
     } catch (error) {

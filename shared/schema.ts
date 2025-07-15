@@ -13,6 +13,7 @@ export const questions = pgTable("questions", {
   question: text("question").notNull(),
   answer: text("answer").notNull(),
   scriptureReferences: text("scripture_references"),
+  recommendedResources: text("recommended_resources"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

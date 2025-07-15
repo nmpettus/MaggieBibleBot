@@ -8,6 +8,7 @@ const openai = new OpenAI({
 export interface BiblicalResponse {
   answer: string;
   scriptureReferences: string;
+  recommendedResources?: string;
 }
 
 export async function askMaggieBibleQuestion(question: string): Promise<BiblicalResponse> {
@@ -24,11 +25,13 @@ Guidelines for your response:
 - Avoid legalism and condemnation
 - Emphasize God's unconditional love and grace
 - Keep responses accessible and practical
+- Include age-appropriate website recommendations for further study
 
 Please respond in JSON format with the following structure:
 {
   "answer": "Your warm, biblical response here",
-  "scriptureReferences": "Relevant Bible verse citations"
+  "scriptureReferences": "Relevant Bible verse citations",
+  "recommendedResources": "Choose 2-3 age-appropriate Christian websites from: The Bible Project (bibleproject.com), Trueway Kids (truewaykids.com), Focus on the Family (focusonthefamily.com), Creative Bible Study (creativebiblestudy.com), Gospel Project (gospelproject.lifeway.com), Bible for Children (bibleforchildren.org)"
 }`;
 
     const response = await openai.chat.completions.create({
@@ -52,7 +55,8 @@ Please respond in JSON format with the following structure:
     
     return {
       answer: result.answer || "I'd love to help you with that biblical question! Could you please rephrase it so I can give you the best grace-centered response?",
-      scriptureReferences: result.scriptureReferences || ""
+      scriptureReferences: result.scriptureReferences || "",
+      recommendedResources: result.recommendedResources || ""
     };
   } catch (error) {
     console.error("OpenAI API error:", error);
