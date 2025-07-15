@@ -458,6 +458,9 @@ export default function Home() {
     // Stop any current speech
     speechSynthesis.cancel();
     
+    // Ensure we're in the right state for browser TTS
+    setIsSpeaking(true);
+    
     // Create utterance with child-optimized settings
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -497,6 +500,7 @@ export default function Home() {
       const voiceDisplayName = chosenVoice.name.replace(/\s*\([^)]*\)/g, ''); // Remove language codes
       setCurrentVoiceInfo(voiceDisplayName);
       console.log('Using enhanced clear female voice:', chosenVoice.name);
+      console.log('🎯 Voice indicator updated to:', voiceDisplayName);
     }
     
     // Event handlers
