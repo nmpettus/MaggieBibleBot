@@ -309,22 +309,33 @@ export default function Home() {
         }
 
         const audioBuffer = await response.arrayBuffer();
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const decodedAudio = await audioContext.decodeAudioData(audioBuffer);
         
-        const source = audioContext.createBufferSource();
-        source.buffer = decodedAudio;
-        source.connect(audioContext.destination);
+        // Use HTML5 Audio for better compatibility
+        const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
         
-        source.onended = () => {
+        audio.oncanplaythrough = () => {
+          const generationTime = Date.now() - startTime;
+          console.log(`🚀 Audio ready in ${generationTime}ms, now playing...`);
+          audio.play().catch(error => {
+            console.error('Audio play error:', error);
+            setIsSpeaking(false);
+          });
+        };
+        
+        audio.onended = () => {
           setIsSpeaking(false);
           const totalTime = Date.now() - startTime;
           console.log(`✅ Faith finished speaking (${totalTime}ms total)`);
+          URL.revokeObjectURL(audioUrl); // Clean up memory
         };
         
-        source.start();
-        const generationTime = Date.now() - startTime;
-        console.log(`🚀 Audio generated in ${generationTime}ms, now playing...`);
+        audio.onerror = (error) => {
+          console.error('Audio error:', error);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
         return;
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
