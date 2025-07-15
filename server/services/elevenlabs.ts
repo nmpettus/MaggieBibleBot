@@ -5,12 +5,12 @@ export interface CartoonVoice {
   category: string;
 }
 
-// ElevenLabs Rachel voice for biblical guidance (using default available voice)
+// Faith voice for biblical guidance - placeholder until API detects actual Faith voice
 export const CARTOON_VOICES: CartoonVoice[] = [
   {
-    voice_id: "21m00Tcm4TlvDq8ikWAM", // Rachel - ElevenLabs default voice
+    voice_id: "21m00Tcm4TlvDq8ikWAM", // Fallback - will be replaced by Faith when detected
     name: "Rachel",
-    description: "Gentle, faithful voice perfect for biblical guidance and cartoon characters",
+    description: "Gentle, faithful voice (fallback until Faith is detected)",
     category: "faith-based"
   }
 ];
@@ -66,31 +66,38 @@ export async function getAvailableVoices(): Promise<any[]> {
       const data = await response.json();
       const voices = data.voices || [];
       
-      // Look for Faith voice specifically
+      // Look for Faith voice specifically and prioritize it
       const faithVoice = voices.find((v: any) => v.name.toLowerCase() === 'faith');
-      
-      if (faithVoice) {
-        return [{
-          voice_id: faithVoice.voice_id,
-          name: faithVoice.name,
-          description: 'Faith voice from ElevenLabs - perfect for biblical guidance',
-          category: 'faith-based'
-        }];
-      }
-      
-      // Return all available voices if Faith not found
-      return voices.map((v: any) => ({
+      const allAvailableVoices = voices.map((v: any) => ({
         voice_id: v.voice_id,
         name: v.name,
         description: v.description || `${v.name} voice from ElevenLabs`,
         category: v.category || 'general'
       }));
+      
+      if (faithVoice) {
+        // Put Faith voice first in the list
+        const faithVoiceFormatted = {
+          voice_id: faithVoice.voice_id,
+          name: faithVoice.name,
+          description: 'Faith voice from ElevenLabs - perfect for biblical guidance',
+          category: 'faith-based'
+        };
+        
+        // Return Faith first, then other voices
+        const otherVoices = allAvailableVoices.filter(v => v.name.toLowerCase() !== 'faith');
+        return [faithVoiceFormatted, ...otherVoices];
+      }
+      
+      // Return all available voices if Faith not found
+      return allAvailableVoices;
     }
     
     // Fallback to Rachel if API fails
     return CARTOON_VOICES;
   } catch (error) {
-    console.error('Error fetching ElevenLabs voices:', error);
+    console.error('Error fetching ElevenLabs voices (likely permission issue):', error);
+    console.log('Note: Faith voice should be manually configured with correct voice_id');
     return CARTOON_VOICES;
   }
 }
