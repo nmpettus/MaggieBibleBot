@@ -26,6 +26,7 @@ export default function Home() {
   const [isTestingMic, setIsTestingMic] = useState(false);
   const [browserInfo, setBrowserInfo] = useState<string>("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   
   // Speech recognition hook
   const {
@@ -103,31 +104,45 @@ export default function Home() {
       setResponse(data);
       setQuestion(""); // Clear the form
       setHasSubmitted(false); // Reset submission flag
+      
+      // Clear silence timer on successful submission
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        setSilenceTimer(null);
+      }
     }
   });
 
-  // Update question when transcript changes and auto-submit
+  // Update question when transcript changes and auto-submit after silence
   useEffect(() => {
     console.log('Transcript changed:', transcript, 'Voice mode:', isVoiceMode);
     if (transcript && isVoiceMode) {
       console.log('Speech recognized:', transcript);
       setQuestion(transcript);
       
-      // Auto-submit if transcript is long enough and looks like a complete question
-      if (transcript.length > 10 && !listening) {
-        console.log('Auto-submitting transcribed question:', transcript);
-        setTimeout(() => {
-          if (transcript.trim()) {
+      // Clear existing silence timer
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+      }
+      
+      // Start new silence timer - auto-submit after 2 seconds of silence
+      if (transcript.length > 5 && !hasSubmitted) {
+        const timer = setTimeout(() => {
+          if (transcript.trim() && !askMaggieMutation.isPending) {
+            console.log('Auto-submitting after 2 seconds of silence:', transcript);
             askMaggieMutation.mutate(transcript.trim());
-            setIsVoiceMode(false); // Exit voice mode after submission
-            resetTranscript(); // Clear transcript after submission
+            setIsVoiceMode(false);
+            setHasSubmitted(true);
+            resetTranscript();
           }
-        }, 1500); // Slightly longer delay to ensure user can see the transcription
+        }, 2000); // 2 seconds of silence
+        
+        setSilenceTimer(timer);
       }
     }
     
-    // Also check if there's a pending transcript when voice mode stops
-    if (transcript && !isVoiceMode && transcript.length > 10 && !listening && !askMaggieMutation.isPending && !hasSubmitted) {
+    // Also check if there's a pending transcript when voice mode stops manually
+    if (transcript && !isVoiceMode && transcript.length > 5 && !askMaggieMutation.isPending && !hasSubmitted) {
       console.log('Submitting question after voice mode ended:', transcript);
       setHasSubmitted(true);
       setTimeout(() => {
@@ -137,7 +152,7 @@ export default function Home() {
         }
       }, 500);
     }
-  }, [transcript, isVoiceMode, listening, askMaggieMutation]);
+  }, [transcript, isVoiceMode, listening, askMaggieMutation, silenceTimer, hasSubmitted]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +205,12 @@ export default function Home() {
     console.log('Stopping speech recognition...');
     SpeechRecognition.stopListening();
     setIsVoiceMode(false);
+    
+    // Clear silence timer when manually stopping
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      setSilenceTimer(null);
+    }
   };
 
   const testMicrophone = async () => {
