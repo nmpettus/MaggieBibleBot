@@ -22,6 +22,8 @@ export default function Home() {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>("");
+  const [microphoneLevel, setMicrophoneLevel] = useState(0);
+  const [isTestingMic, setIsTestingMic] = useState(false);
   
   // Speech recognition hook
   const {
@@ -128,6 +130,50 @@ export default function Home() {
     console.log('Stopping speech recognition...');
     SpeechRecognition.stopListening();
     setIsVoiceMode(false);
+  };
+
+  const testMicrophone = async () => {
+    setIsTestingMic(true);
+    try {
+      const constraints = {
+        audio: selectedDevice ? { deviceId: { exact: selectedDevice } } : true
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      
+      microphone.connect(analyser);
+      analyser.fftSize = 256;
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      const checkLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+        setMicrophoneLevel(Math.round(average));
+        
+        if (isTestingMic) {
+          requestAnimationFrame(checkLevel);
+        }
+      };
+      
+      checkLevel();
+      
+      // Stop after 5 seconds
+      setTimeout(() => {
+        setIsTestingMic(false);
+        setMicrophoneLevel(0);
+        stream.getTracks().forEach(track => track.stop());
+        audioContext.close();
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Error testing microphone:', error);
+      setIsTestingMic(false);
+    }
   };
 
   // Auto-stop listening after 30 seconds to prevent endless recording
@@ -240,18 +286,41 @@ export default function Home() {
                 {browserSupportsSpeechRecognition && audioDevices.length > 1 && (
                   <div className="mt-2 p-3 bg-blue-50 rounded-md border">
                     <div className="text-xs text-blue-600 mb-2">Select Microphone:</div>
-                    <select 
-                      value={selectedDevice} 
-                      onChange={(e) => setSelectedDevice(e.target.value)}
-                      className="w-full text-sm p-2 border rounded"
-                    >
-                      <option value="">Default microphone</option>
-                      {audioDevices.map(device => (
-                        <option key={device.deviceId} value={device.deviceId}>
-                          {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex gap-2">
+                      <select 
+                        value={selectedDevice} 
+                        onChange={(e) => setSelectedDevice(e.target.value)}
+                        className="flex-1 text-sm p-2 border rounded"
+                      >
+                        <option value="">Default microphone</option>
+                        {audioDevices.map(device => (
+                          <option key={device.deviceId} value={device.deviceId}>
+                            {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        onClick={testMicrophone}
+                        disabled={isTestingMic}
+                        className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1"
+                      >
+                        {isTestingMic ? 'Testing...' : 'Test Mic'}
+                      </Button>
+                    </div>
+                    {isTestingMic && (
+                      <div className="mt-2">
+                        <div className="text-xs text-green-600 mb-1">
+                          Microphone level: {microphoneLevel}% (speak into your AirPods)
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full transition-all duration-100"
+                            style={{width: `${Math.min(microphoneLevel * 2, 100)}%`}}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -265,9 +334,10 @@ export default function Home() {
                       <div>Transcript: "{transcript || 'None'}"</div>
                       <div>Transcript length: {transcript ? transcript.length : 0} characters</div>
                       <div>Selected device: {selectedDevice ? audioDevices.find(d => d.deviceId === selectedDevice)?.label || 'Unknown' : 'Default'}</div>
+                      <div>Mic level: {microphoneLevel}%</div>
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      Check browser console (F12) for detailed logs
+                      💡 Try the "Test Mic" button to check if your AirPods are working
                     </div>
                   </div>
                 )}
