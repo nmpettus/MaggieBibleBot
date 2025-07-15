@@ -20,6 +20,11 @@ export async function generateSpeechElevenLabs(
   voiceId: string = "bIQlQ61Q7WgbyZAL7IWj" // Default to Faith voice
 ): Promise<ArrayBuffer> {
   try {
+    // Optimize text length for faster generation
+    const maxLength = 800; // Shorter text = faster generation
+    const optimizedText = text.length > maxLength ? 
+      text.substring(0, maxLength).split('.').slice(0, -1).join('.') + '.' : text;
+
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
@@ -28,14 +33,15 @@ export async function generateSpeechElevenLabs(
         'xi-api-key': process.env.ELEVENLABS_API_KEY || ''
       },
       body: JSON.stringify({
-        text: text,
-        model_id: "eleven_monolingual_v1",
+        text: optimizedText,
+        model_id: "eleven_turbo_v2", // Faster turbo model for speed
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.5,
-          style: 0.8, // More expressive/animated
+          stability: 0.7, // Slightly higher for consistency
+          similarity_boost: 0.75, // Good balance of quality/speed
+          style: 0.3, // Lower style for faster generation
           use_speaker_boost: true
-        }
+        },
+        output_format: "mp3_22050_32" // Lower quality for faster streaming
       })
     });
 

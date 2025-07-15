@@ -167,11 +167,9 @@ export default function Home() {
       resetTranscript(); // Clear transcript
       setTimeout(() => setHasSubmitted(false), 1000); // Reset submission flag after delay
       
-      // Auto-speak the answer with Faith voice
+      // Auto-speak the answer with Faith voice (no delay for faster response)
       if (data.answer) {
-        setTimeout(() => {
-          speakText(data.answer);
-        }, 500); // Small delay to ensure everything is set up
+        speakText(data.answer);
       }
     }
   });
@@ -290,7 +288,10 @@ export default function Home() {
     if (useElevenLabs && selectedVoice) {
       try {
         setIsSpeaking(true);
-        console.log('Starting to speak with ElevenLabs voice...', text.substring(0, 50));
+        console.log('🎤 Faith speaking:', text.substring(0, 50) + '...');
+        
+        // Show immediate feedback to user
+        const startTime = Date.now();
         
         const response = await fetch('/api/generate-speech', {
           method: 'POST',
@@ -317,10 +318,13 @@ export default function Home() {
         
         source.onended = () => {
           setIsSpeaking(false);
-          console.log('Finished speaking with ElevenLabs voice');
+          const totalTime = Date.now() - startTime;
+          console.log(`✅ Faith finished speaking (${totalTime}ms total)`);
         };
         
         source.start();
+        const generationTime = Date.now() - startTime;
+        console.log(`🚀 Audio generated in ${generationTime}ms, now playing...`);
         return;
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
