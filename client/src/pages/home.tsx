@@ -713,7 +713,7 @@ export default function Home() {
               </div>
 
               {/* Enhanced explanatory text with glass card */}
-              <div className="glass-card p-6 max-w-4xl mx-auto">
+              <div className="glass-card p-6 max-w-4xl mx-auto light-runner-border white-dash">
                 <p className="text-xl text-white/90 leading-relaxed">
                   Answers are based on the New Testament covenant of Grace and God's Love as taught by 
                   <span className="font-semibold text-blue-200"> Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts</span>.
