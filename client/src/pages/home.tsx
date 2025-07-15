@@ -328,14 +328,33 @@ export default function Home() {
         // Set as current audio for cleanup
         setCurrentAudio(audio);
         
+        // Safari requires user interaction for autoplay, but this is triggered by user action
         audio.oncanplaythrough = () => {
           const generationTime = Date.now() - startTime;
-          console.log(`🚀 Audio ready in ${generationTime}ms, now playing...`);
-          audio.play().catch(error => {
-            console.error('Audio play error:', error);
-            setIsSpeaking(false);
-            setCurrentAudio(null);
-          });
+          console.log(`🚀 Audio ready in ${generationTime}ms, attempting to play...`);
+          
+          // Force play immediately (user already interacted by clicking)
+          audio.play()
+            .then(() => {
+              console.log('✅ Audio playback started successfully');
+            })
+            .catch(error => {
+              console.error('Audio play error (trying fallback):', error);
+              // Try browser TTS as fallback
+              setIsSpeaking(false);
+              setCurrentAudio(null);
+              
+              // Fallback to browser speech
+              if (speechSynthesis) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.8;
+                utterance.pitch = 1.2;
+                utterance.onend = () => setIsSpeaking(false);
+                speechSynthesis.speak(utterance);
+                setIsSpeaking(true);
+                console.log('🔄 Fallback to browser speech synthesis');
+              }
+            });
         };
         
         audio.onended = () => {
@@ -352,6 +371,23 @@ export default function Home() {
           setCurrentAudio(null);
           URL.revokeObjectURL(audioUrl);
         };
+
+        // Add load event handler
+        audio.addEventListener('loadstart', () => {
+          console.log('Audio loading started...');
+        });
+
+        // Preload and start loading immediately
+        audio.preload = 'auto';
+        audio.load();
+        
+        // Also try to play when loaded
+        audio.addEventListener('loadeddata', () => {
+          console.log('Audio data loaded, trying immediate play...');
+          if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
+            audio.play().catch(err => console.log('Immediate play failed, waiting for canplaythrough'));
+          }
+        });
         return;
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
