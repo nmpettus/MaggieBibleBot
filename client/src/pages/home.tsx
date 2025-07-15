@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff, Volume2, VolumeX, Settings } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
@@ -30,6 +31,8 @@ export default function Home() {
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSynthesis, setSpeechSynthesis] = useState<SpeechSynthesis | null>(null);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string>("");
   
   // Speech recognition hook
   const {
@@ -62,6 +65,44 @@ export default function Home() {
     // Initialize speech synthesis
     if ('speechSynthesis' in window) {
       setSpeechSynthesis(window.speechSynthesis);
+      
+      // Load voices
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.gender || 'unknown gender'}`));
+        setAvailableVoices(voices);
+        
+        // Auto-select a childlike or female voice for Maggie
+        const childlikeVoices = voices.filter(voice => 
+          voice.name.toLowerCase().includes('child') ||
+          voice.name.toLowerCase().includes('kid') ||
+          voice.name.toLowerCase().includes('young') ||
+          voice.name.toLowerCase().includes('girl')
+        );
+        
+        const femaleVoices = voices.filter(voice => 
+          voice.name.toLowerCase().includes('female') ||
+          voice.name.toLowerCase().includes('woman') ||
+          voice.name.toLowerCase().includes('samantha') ||
+          voice.name.toLowerCase().includes('kate') ||
+          voice.name.toLowerCase().includes('anna') ||
+          voice.name.toLowerCase().includes('zoe') ||
+          voice.name.toLowerCase().includes('fiona') ||
+          voice.name.toLowerCase().includes('tessa')
+        );
+        
+        // Prefer childlike voices first, then female voices
+        const preferredVoice = childlikeVoices[0] || femaleVoices[0] || voices.find(v => v.lang.startsWith('en'));
+        
+        if (preferredVoice) {
+          setSelectedVoice(preferredVoice.name);
+          console.log('Auto-selected voice for Maggie:', preferredVoice.name);
+        }
+      };
+      
+      // Load voices immediately and also when they change
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
     detectBrowser();
@@ -232,22 +273,30 @@ export default function Home() {
     // Create utterance
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Configure voice settings
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
+    // Configure voice settings for a more childlike/cartoon sound
+    utterance.rate = 1.1; // Slightly faster for more animated feel
+    utterance.pitch = 1.3; // Higher pitch for cartoon dog voice
     utterance.volume = 1.0;
     
-    // Find a pleasant female voice if available
+    // Use selected voice or find the best available
     const voices = speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes('female') || 
-      voice.name.toLowerCase().includes('samantha') ||
-      voice.name.toLowerCase().includes('karen') ||
-      voice.name.toLowerCase().includes('kate')
-    );
+    let chosenVoice = voices.find(voice => voice.name === selectedVoice);
     
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+    if (!chosenVoice) {
+      // Fallback: look for childlike or high-pitched voices
+      chosenVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes('child') ||
+        voice.name.toLowerCase().includes('kid') ||
+        voice.name.toLowerCase().includes('young') ||
+        voice.name.toLowerCase().includes('zoe') ||
+        voice.name.toLowerCase().includes('tessa') ||
+        voice.name.toLowerCase().includes('anna')
+      ) || voices.find(voice => voice.lang.startsWith('en'));
+    }
+    
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
+      console.log('Using voice for Maggie:', chosenVoice.name);
     }
     
     // Event handlers
@@ -498,27 +547,70 @@ export default function Home() {
                           <p className="text-muted-foreground text-sm">Based on the New Testament covenant of Grace</p>
                         </div>
                         
-                        {/* Text-to-speech button */}
+                        {/* Text-to-speech controls */}
                         {speechSynthesis && (
-                          <Button
-                            onClick={toggleSpeech}
-                            variant="outline"
-                            size="sm"
-                            className="ml-4 shrink-0"
-                            disabled={!response}
-                          >
-                            {isSpeaking ? (
-                              <>
-                                <VolumeX className="w-4 h-4 mr-2" />
-                                Stop
-                              </>
-                            ) : (
-                              <>
-                                <Volume2 className="w-4 h-4 mr-2" />
-                                Listen
-                              </>
-                            )}
-                          </Button>
+                          <div className="flex items-center gap-2 ml-4 shrink-0">
+                            {/* Voice selector */}
+                            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                              <SelectTrigger className="w-40 h-8 text-xs">
+                                <SelectValue placeholder="Select voice" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableVoices
+                                  .filter(voice => voice.lang.startsWith('en')) // English voices only
+                                  .sort((a, b) => {
+                                    // Prioritize childlike/female voices
+                                    const aScore = (
+                                      (a.name.toLowerCase().includes('child') ? 100 : 0) +
+                                      (a.name.toLowerCase().includes('young') ? 90 : 0) +
+                                      (a.name.toLowerCase().includes('anna') ? 80 : 0) +
+                                      (a.name.toLowerCase().includes('zoe') ? 80 : 0) +
+                                      (a.name.toLowerCase().includes('tessa') ? 80 : 0) +
+                                      (a.name.toLowerCase().includes('flo') ? 70 : 0) +
+                                      (a.name.toLowerCase().includes('vicki') ? 60 : 0) +
+                                      (a.name.toLowerCase().includes('karen') ? 50 : 0)
+                                    );
+                                    const bScore = (
+                                      (b.name.toLowerCase().includes('child') ? 100 : 0) +
+                                      (b.name.toLowerCase().includes('young') ? 90 : 0) +
+                                      (b.name.toLowerCase().includes('anna') ? 80 : 0) +
+                                      (b.name.toLowerCase().includes('zoe') ? 80 : 0) +
+                                      (b.name.toLowerCase().includes('tessa') ? 80 : 0) +
+                                      (b.name.toLowerCase().includes('flo') ? 70 : 0) +
+                                      (b.name.toLowerCase().includes('vicki') ? 60 : 0) +
+                                      (b.name.toLowerCase().includes('karen') ? 50 : 0)
+                                    );
+                                    return bScore - aScore || a.name.localeCompare(b.name);
+                                  })
+                                  .map((voice, index) => (
+                                    <SelectItem key={index} value={voice.name}>
+                                      {voice.name} {voice.name.toLowerCase().includes('child') || voice.name.toLowerCase().includes('young') ? '🧒' : 
+                                       voice.name.toLowerCase().includes('anna') || voice.name.toLowerCase().includes('zoe') || voice.name.toLowerCase().includes('tessa') || voice.name.toLowerCase().includes('flo') ? '👧' : ''}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                            
+                            {/* Listen button */}
+                            <Button
+                              onClick={toggleSpeech}
+                              variant="outline"
+                              size="sm"
+                              disabled={!response}
+                            >
+                              {isSpeaking ? (
+                                <>
+                                  <VolumeX className="w-4 h-4 mr-2" />
+                                  Stop
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="w-4 h-4 mr-2" />
+                                  Listen
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         )}
                       </div>
                       
