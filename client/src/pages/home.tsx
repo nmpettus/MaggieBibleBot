@@ -457,10 +457,77 @@ export default function Home() {
       }
     }
 
-    // REMOVED: No fallback to browser speech synthesis - Faith voice only
-    console.log('⚠️ Faith voice not available - no audio will play');
-    setIsSpeaking(false);
-    return;
+    // Enhanced free TTS fallback with child-optimized voice
+    console.log('Using enhanced free TTS with child-optimized voice');
+    
+    if (!speechSynthesis) {
+      console.log('⚠️ Speech synthesis not available in this browser');
+      setIsSpeaking(false);
+      return;
+    }
+    
+    // Stop any current speech
+    speechSynthesis.cancel();
+    
+    // Create utterance with child-optimized settings
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Child voice optimization settings
+    utterance.rate = 0.6; // Slower rate for clarity and child-like speech
+    utterance.pitch = 1.8; // Higher pitch for child-like voice
+    utterance.volume = 1.0;
+    
+    // Find the best child-like voice
+    const voices = speechSynthesis.getVoices();
+    
+    // Priority order for child-like voices
+    const childVoicePatterns = [
+      'junior', 'child', 'young', 'kid', 'boy', 'girl',
+      'samantha', 'alex', 'karen', 'vicki', 'fred'
+    ];
+    
+    let chosenVoice = null;
+    
+    // Try to find a good child-like voice
+    for (const pattern of childVoicePatterns) {
+      chosenVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes(pattern) && 
+        voice.lang.startsWith('en')
+      );
+      if (chosenVoice) break;
+    }
+    
+    // Fallback to any English voice if no child-like voice found
+    if (!chosenVoice) {
+      chosenVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+    }
+    
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
+      console.log('Using enhanced child-optimized voice:', chosenVoice.name);
+    }
+    
+    // Event handlers
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      console.log('Enhanced child voice started speaking...');
+      startWordHighlighting(text);
+    };
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      stopWordHighlighting();
+      console.log('Enhanced child voice finished speaking');
+    };
+    
+    utterance.onerror = (event) => {
+      setIsSpeaking(false);
+      stopWordHighlighting();
+      console.error('Enhanced speech error:', event.error);
+    };
+    
+    // Start speaking with child-optimized settings
+    speechSynthesis.speak(utterance);
   };
 
   const stopSpeaking = () => {
@@ -473,7 +540,13 @@ export default function Home() {
       setCurrentAudio(null);
     }
     
+    // Stop browser speech synthesis
+    if (speechSynthesis) {
+      speechSynthesis.cancel();
+    }
+    
     setIsSpeaking(false);
+    stopWordHighlighting();
   };
 
   // Function to start word highlighting with precise timing
