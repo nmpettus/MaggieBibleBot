@@ -905,11 +905,9 @@ export default function Home() {
                                   </>
                                 )}
                               </Button>
-                              {currentVoiceInfo && (
-                                <div className="text-xs text-white/70 mt-1 px-2 py-1 bg-white/10 rounded-md backdrop-blur-sm">
-                                  Voice: {currentVoiceInfo}
-                                </div>
-                              )}
+                              <div className="text-xs text-white/70 mt-1 px-2 py-1 bg-white/10 rounded-md backdrop-blur-sm">
+                                Voice: {currentVoiceInfo || 'Loading...'}
+                              </div>
                             </div>
                           </div>
                         )}
