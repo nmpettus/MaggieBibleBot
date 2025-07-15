@@ -71,11 +71,11 @@ export default function Home() {
         const data = await response.json();
         setElevenLabsVoices(data.voices || []);
         
-        // Auto-select Faith voice for biblical guidance
-        const faithVoice = data.voices.find((v: any) => v.name === 'Faith');
-        if (faithVoice) {
-          setSelectedVoice(faithVoice.voice_id);
-          console.log('Auto-selected Faith voice for Maggie:', faithVoice.name);
+        // Auto-select Rachel voice for biblical guidance
+        const rachelVoice = data.voices.find((v: any) => v.name === 'Rachel');
+        if (rachelVoice) {
+          setSelectedVoice(rachelVoice.voice_id);
+          console.log('Auto-selected Rachel voice for Maggie:', rachelVoice.name);
         }
       } catch (error) {
         console.error('Error loading ElevenLabs voices:', error);
@@ -273,7 +273,7 @@ export default function Home() {
     if (useElevenLabs && selectedVoice) {
       try {
         setIsSpeaking(true);
-        console.log('Starting to speak with Faith voice from ElevenLabs...');
+        console.log('Starting to speak with Rachel voice from ElevenLabs...');
         
         const response = await fetch('/api/generate-speech', {
           method: 'POST',
@@ -300,7 +300,7 @@ export default function Home() {
         
         source.onended = () => {
           setIsSpeaking(false);
-          console.log('Finished speaking with Faith voice');
+          console.log('Finished speaking with Rachel voice');
         };
         
         source.start();
@@ -379,7 +379,7 @@ export default function Home() {
     }
   };
 
-  // Test voice function with Faith voice
+  // Test voice function with Rachel voice
   const testVoice = () => {
     const testPhrase = "Hi there! I'm Maggie, your faithful biblical guide! By faith we understand God's love and grace.";
     speakText(testPhrase);
@@ -611,7 +611,7 @@ export default function Home() {
                                 {/* ElevenLabs voices first (higher quality) */}
                                 {elevenLabsVoices.map((voice, index) => (
                                   <SelectItem key={`el-${index}`} value={voice.voice_id}>
-                                    {voice.name} {voice.name === 'Faith' ? '✝️' : voice.category === 'childlike' ? '⭐' : voice.category === 'faith-based' ? '🙏' : '🎭'}
+                                    {voice.name} {voice.name === 'Rachel' ? '✝️' : voice.category === 'childlike' ? '⭐' : voice.category === 'faith-based' ? '🙏' : '🎭'}
                                   </SelectItem>
                                 ))}
                                 
