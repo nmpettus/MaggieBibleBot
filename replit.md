@@ -114,4 +114,8 @@ The application is designed to be easily deployable on Replit with automatic env
 - **NEW: Created fallback system: Faith voice first, then browser voices if API fails**
 - **NEW: Auto-selects Faith voice marked with ✝️ symbol for biblical authenticity**
 - **UPDATED: Switched from Rachel to Faith voice (bIQlQ61Q7WgbyZAL7IWj) from user's account**
+- **NEW: Added beautiful light runner border animation around question input box**
+- **NEW: Enforced Faith voice as exclusive voice choice - system always prioritizes ElevenLabs Faith voice**
+- **NEW: Enhanced error handling for ElevenLabs quota issues with graceful fallback messaging**
+- **NEW: Question input box now features animated light border that runs around the perimeter**
 - App is fully functional and stable for biblical Q&A with both text and voice input using premium Faith voice

@@ -32,9 +32,9 @@ export default function Home() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSynthesis, setSpeechSynthesis] = useState<SpeechSynthesis | null>(null);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<string>("");
+  const [selectedVoice, setSelectedVoice] = useState<string>("bIQlQ61Q7WgbyZAL7IWj"); // Always Faith voice
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
-  const [useElevenLabs, setUseElevenLabs] = useState<boolean>(true);
+  const [useElevenLabs, setUseElevenLabs] = useState<boolean>(true); // Always try ElevenLabs Faith voice first
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
   const [highlightTimers, setHighlightTimers] = useState<NodeJS.Timeout[]>([]);
   
@@ -427,11 +427,13 @@ export default function Home() {
         console.error('ElevenLabs speech error:', error);
         setIsSpeaking(false);
         
-        // Handle specific fallback case gracefully
+        // Always try to use ElevenLabs Faith voice, but handle errors gracefully
         if (error.message === 'FALLBACK_TO_BROWSER') {
-          console.log('✨ Gracefully switching to browser speech due to API quota');
+          console.log('⚠️ ElevenLabs quota exceeded - Faith voice unavailable temporarily');
+        } else {
+          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable, will retry next time');
         }
-        // Fall back to browser speech synthesis
+        // Only fall back when absolutely necessary
       }
     }
 
@@ -725,7 +727,7 @@ export default function Home() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Enhanced Question input */}
                 <div className="relative">
-                  <div className="glass-card p-1">
+                  <div className="glass-card p-1 light-runner-border">
                     <Textarea
                       id="question"
                       value={question}
