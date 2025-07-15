@@ -38,7 +38,7 @@ export default function Home() {
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
   const [highlightTimers, setHighlightTimers] = useState<NodeJS.Timeout[]>([]);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice");
+  const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice ✝️");
   
   // Function to render text with word highlighting
   const renderHighlightedText = (text: string) => {
@@ -388,15 +388,11 @@ export default function Home() {
               setIsSpeaking(false);
               setCurrentAudio(null);
               
-              // Fallback to browser speech
+              // Fallback to enhanced browser speech
               if (speechSynthesis) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.8;
-                utterance.pitch = 1.2;
-                utterance.onend = () => setIsSpeaking(false);
-                speechSynthesis.speak(utterance);
                 setIsSpeaking(true);
-                console.log('🔄 Fallback to browser speech synthesis');
+                playBrowserTTS(text);
+                console.log('🔄 Fallback to enhanced browser speech synthesis');
               }
             });
         };
@@ -465,25 +461,25 @@ export default function Home() {
     // Create utterance with child-optimized settings
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Childlike female voice optimization settings
-    utterance.rate = 0.7; // Slower for childlike speech pattern
-    utterance.pitch = 1.4; // Higher pitch for more childlike, youthful voice
+    // Clear, natural female voice optimization settings
+    utterance.rate = 0.85; // Clear speaking rate for better understanding
+    utterance.pitch = 1.2; // Slightly higher for feminine voice but not too high
     utterance.volume = 1.0;
     
     // Find the best child-like voice
     const voices = speechSynthesis.getVoices();
     
-    // Priority order for childlike and natural female voices
-    const childlikeFemaleVoices = [
-      'junior', 'kid', 'child', 'young', 'girl', 'toy', 'baby', 'little',
-      'karen', 'vicki', 'samantha', 'shelley', 'flo', 'kathy', 'sandy',
-      'moira', 'tessa', 'anna', 'sara', 'zuzana', 'melina', 'daria'
+    // Priority order for clear, natural female voices (most understandable first)
+    const clearFemaleVoices = [
+      'samantha', 'karen', 'vicki', 'kathy', 'shelley', 'flo', 'sandy',
+      'moira', 'tessa', 'anna', 'sara', 'zuzana', 'melina', 'daria',
+      'junior', 'kid', 'child', 'young', 'girl', 'toy', 'baby', 'little'
     ];
     
     let chosenVoice = null;
     
-    // Try to find the most childlike female voice
-    for (const pattern of childlikeFemaleVoices) {
+    // Try to find the most clear and understandable female voice
+    for (const pattern of clearFemaleVoices) {
       chosenVoice = voices.find(voice => 
         voice.name.toLowerCase().includes(pattern) && 
         voice.lang.startsWith('en')
@@ -498,8 +494,9 @@ export default function Home() {
     
     if (chosenVoice) {
       utterance.voice = chosenVoice;
-      setCurrentVoiceInfo(chosenVoice.name);
-      console.log('Using enhanced childlike female voice:', chosenVoice.name);
+      const voiceDisplayName = chosenVoice.name.replace(/\s*\([^)]*\)/g, ''); // Remove language codes
+      setCurrentVoiceInfo(voiceDisplayName);
+      console.log('Using enhanced clear female voice:', chosenVoice.name);
     }
     
     // Event handlers
@@ -904,9 +901,11 @@ export default function Home() {
                                   </>
                                 )}
                               </Button>
-                              <div className="text-xs text-white/70 mt-1 px-2 py-1 bg-white/10 rounded-md backdrop-blur-sm">
-                                Voice: {currentVoiceInfo}
-                              </div>
+                              {currentVoiceInfo && (
+                                <div className="text-xs text-white/70 mt-1 px-2 py-1 bg-white/10 rounded-md backdrop-blur-sm">
+                                  Voice: {currentVoiceInfo}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
