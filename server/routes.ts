@@ -106,9 +106,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(Buffer.from(audioBuffer));
     } catch (error) {
       console.error("Error generating speech:", error);
-      res.status(500).json({ 
-        message: "Failed to generate speech. Please try again!" 
-      });
+      
+      // Handle quota exceeded specifically
+      if (error.message === 'QUOTA_EXCEEDED') {
+        res.status(429).json({ 
+          message: "ElevenLabs quota exceeded. Using browser voice instead.",
+          fallback: true
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to generate speech. Using browser voice instead.",
+          fallback: true 
+        });
+      }
     }
   });
 

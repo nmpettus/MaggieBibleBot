@@ -20,32 +20,35 @@ export async function generateSpeechElevenLabs(
   voiceId: string = "bIQlQ61Q7WgbyZAL7IWj" // Default to Faith voice
 ): Promise<ArrayBuffer> {
   try {
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    
     // Optimize text length for faster generation
     const maxLength = 800; // Shorter text = faster generation
     const optimizedText = text.length > maxLength ? 
       text.substring(0, maxLength).split('.').slice(0, -1).join('.') + '.' : text;
-
+    
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': process.env.ELEVENLABS_API_KEY || ''
+        'xi-api-key': apiKey || ''
       },
       body: JSON.stringify({
         text: optimizedText,
-        model_id: "eleven_turbo_v2", // Faster turbo model for speed
-        voice_settings: {
-          stability: 0.7, // Slightly higher for consistency
-          similarity_boost: 0.75, // Good balance of quality/speed
-          style: 0.3, // Lower style for faster generation
-          use_speaker_boost: true
-        },
-        output_format: "mp3_22050_32" // Lower quality for faster streaming
+        model_id: "eleven_turbo_v2"
       })
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.log('ElevenLabs API error details:', errorText);
+      
+      // Check if it's a quota issue
+      if (response.status === 401 && errorText.includes('quota_exceeded')) {
+        throw new Error('QUOTA_EXCEEDED');
+      }
+      
       throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
     }
 
@@ -97,13 +100,14 @@ export async function getAvailableVoices(): Promise<any[]> {
       
       // Return all available voices if Faith not found
       return allAvailableVoices;
+    } else {
+      // If API key doesn't have voice listing permission, return Faith voice directly
+      console.log('API key has limited permissions - using Faith voice directly');
+      return CARTOON_VOICES;
     }
-    
-    // Fallback to Rachel if API fails
-    return CARTOON_VOICES;
   } catch (error) {
     console.error('Error fetching ElevenLabs voices (likely permission issue):', error);
-    console.log('Note: Faith voice should be manually configured with correct voice_id');
+    console.log('Note: Using Faith voice directly with known voice_id');
     return CARTOON_VOICES;
   }
 }

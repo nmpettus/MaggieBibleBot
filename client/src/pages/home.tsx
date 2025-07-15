@@ -336,6 +336,15 @@ export default function Home() {
         });
 
         if (!response.ok) {
+          // Check if it's a quota/fallback issue
+          if (response.status === 429 || response.status === 500) {
+            const errorData = await response.json();
+            if (errorData.fallback) {
+              console.log('ElevenLabs unavailable, using browser speech:', errorData.message);
+              // Fall through to browser TTS below
+              throw new Error('FALLBACK_TO_BROWSER');
+            }
+          }
           throw new Error('Failed to generate speech');
         }
 
@@ -417,6 +426,11 @@ export default function Home() {
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
         setIsSpeaking(false);
+        
+        // Handle specific fallback case gracefully
+        if (error.message === 'FALLBACK_TO_BROWSER') {
+          console.log('✨ Gracefully switching to browser speech due to API quota');
+        }
         // Fall back to browser speech synthesis
       }
     }
