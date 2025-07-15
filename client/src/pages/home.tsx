@@ -434,26 +434,15 @@ export default function Home() {
         console.error('ElevenLabs speech error:', error);
         setIsSpeaking(false);
         
-        // Always prioritize Faith voice - never automatically fallback for quota issues
+        // Faith voice failed - use enhanced free TTS as fallback
         if (error.message === 'QUOTA_EXCEEDED') {
-          console.log('⚠️ Faith voice quota exceeded - will be available when credits are renewed');
-          // Show user-visible message about Faith voice unavailability
-          alert('Faith voice is temporarily unavailable (quota exceeded). Audio will resume when ElevenLabs credits are renewed.');
-          setIsSpeaking(false);
-          return;
+          console.log('⚠️ Faith voice quota exceeded - switching to enhanced free TTS');
         } else if (error.message === 'FAITH_VOICE_ERROR') {
-          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable due to technical issue');
-          // Show user-visible message about technical issue
-          alert('Faith voice is temporarily unavailable (technical issue). Please try again later.');
-          setIsSpeaking(false);
-          return;
+          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable - switching to enhanced free TTS');
         } else {
-          console.log('⚠️ ElevenLabs service unavailable, technical issue detected');
-          // Show user-visible message about service unavailability
-          alert('Faith voice service is currently unavailable. Please try again later.');
-          setIsSpeaking(false);
-          return;
+          console.log('⚠️ ElevenLabs service unavailable - switching to enhanced free TTS');
         }
+        // Continue to enhanced free TTS fallback below
       }
     }
 
