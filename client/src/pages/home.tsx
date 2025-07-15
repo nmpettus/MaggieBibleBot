@@ -33,6 +33,8 @@ export default function Home() {
   const [speechSynthesis, setSpeechSynthesis] = useState<SpeechSynthesis | null>(null);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>("");
+  const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
+  const [useElevenLabs, setUseElevenLabs] = useState<boolean>(true);
   
   // Speech recognition hook
   const {
@@ -62,89 +64,51 @@ export default function Home() {
       console.log('Browser detected:', browser);
     };
 
-    // Initialize speech synthesis
+    // Load ElevenLabs voices for better cartoon quality
+    const loadElevenLabsVoices = async () => {
+      try {
+        const response = await fetch('/api/cartoon-voices');
+        const data = await response.json();
+        setElevenLabsVoices(data.voices || []);
+        
+        // Auto-select Faith voice for biblical guidance
+        const faithVoice = data.voices.find((v: any) => v.name === 'Faith');
+        if (faithVoice) {
+          setSelectedVoice(faithVoice.voice_id);
+          console.log('Auto-selected Faith voice for Maggie:', faithVoice.name);
+        }
+      } catch (error) {
+        console.error('Error loading ElevenLabs voices:', error);
+        setUseElevenLabs(false);
+      }
+    };
+
+    // Initialize speech synthesis as fallback
     if ('speechSynthesis' in window) {
       setSpeechSynthesis(window.speechSynthesis);
       
-      // Load voices
-      const loadVoices = () => {
+      // Load browser voices as fallback
+      const loadBrowserVoices = () => {
         const voices = window.speechSynthesis.getVoices();
-        console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.gender || 'unknown gender'}`));
+        console.log('Available browser voices:', voices.map(v => `${v.name} (${v.lang})`));
         setAvailableVoices(voices);
         
-        // Find the best childlike voices for Maggie
-        const bestChildlikeVoices = voices.filter(voice => 
-          voice.lang.startsWith('en') && (
-            // Specifically look for voices known to be youthful/childlike
-            voice.name.toLowerCase().includes('alice') ||
-            voice.name.toLowerCase().includes('allison') ||
-            voice.name.toLowerCase().includes('ava') ||
-            voice.name.toLowerCase().includes('susan') ||
-            voice.name.toLowerCase().includes('princess') ||
-            voice.name.toLowerCase().includes('victoria') ||
-            voice.name.toLowerCase().includes('zoey') ||
-            voice.name.toLowerCase().includes('zoe') ||
-            voice.name.toLowerCase().includes('child') ||
-            voice.name.toLowerCase().includes('kid') ||
-            voice.name.toLowerCase().includes('young') ||
-            voice.name.toLowerCase().includes('girl') ||
-            voice.name.toLowerCase().includes('junior') ||
-            voice.name.toLowerCase().includes('little')
-          )
-        );
-        
-        const goodFemaleVoices = voices.filter(voice => 
-          voice.lang.startsWith('en') && (
-            voice.name.toLowerCase().includes('samantha') ||
-            voice.name.toLowerCase().includes('anna') ||
-            voice.name.toLowerCase().includes('kate') ||
-            voice.name.toLowerCase().includes('tessa') ||
-            voice.name.toLowerCase().includes('fiona') ||
-            voice.name.toLowerCase().includes('emma') ||
-            voice.name.toLowerCase().includes('olivia') ||
-            voice.name.toLowerCase().includes('sophia') ||
-            voice.name.toLowerCase().includes('victoria') ||
-            voice.name.toLowerCase().includes('allison') ||
-            voice.name.toLowerCase().includes('claire') ||
-            voice.name.toLowerCase().includes('martha')
-          )
-        );
-        
-        // Also look for specialty/novelty voices
-        const noveltyVoices = voices.filter(voice => 
-          voice.lang.startsWith('en') && (
-            voice.name.toLowerCase().includes('bells') ||
-            voice.name.toLowerCase().includes('bubbles') ||
-            voice.name.toLowerCase().includes('good news') ||
-            voice.name.toLowerCase().includes('junior') ||
-            voice.name.toLowerCase().includes('pipe organ') ||
-            voice.name.toLowerCase().includes('trinoids') ||
-            voice.name.toLowerCase().includes('whisper') ||
-            voice.name.toLowerCase().includes('deranged') ||
-            voice.name.toLowerCase().includes('hysterical')
-          )
-        );
-        
-        // Select the best voice available (prefer childlike, then novelty, then female)
-        const preferredVoice = bestChildlikeVoices[0] || noveltyVoices[0] || goodFemaleVoices[0] || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'));
-        
-        if (preferredVoice) {
-          setSelectedVoice(preferredVoice.name);
-          console.log('Auto-selected voice for Maggie:', preferredVoice.name);
-        } else {
-          // Fallback to any English voice
-          const fallback = voices.find(v => v.lang.startsWith('en'));
-          if (fallback) {
-            setSelectedVoice(fallback.name);
-            console.log('Fallback voice selected:', fallback.name);
+        if (!useElevenLabs) {
+          // Only use browser voices if ElevenLabs fails
+          const juniorVoice = voices.find(v => v.name.toLowerCase().includes('junior'));
+          if (juniorVoice) {
+            setSelectedVoice(juniorVoice.name);
+            console.log('Fallback to Junior voice:', juniorVoice.name);
           }
         }
       };
       
-      // Load voices immediately and also when they change
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadBrowserVoices();
+      window.speechSynthesis.onvoiceschanged = loadBrowserVoices;
     }
+
+    // Try to load ElevenLabs voices first
+    loadElevenLabsVoices();
 
     detectBrowser();
   }, []);
@@ -304,8 +268,51 @@ export default function Home() {
     }
   };
 
-  // Text-to-speech functions
-  const speakText = (text: string) => {
+  // Text-to-speech functions with ElevenLabs integration
+  const speakText = async (text: string) => {
+    if (useElevenLabs && selectedVoice) {
+      try {
+        setIsSpeaking(true);
+        console.log('Starting to speak with Faith voice from ElevenLabs...');
+        
+        const response = await fetch('/api/generate-speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            voiceId: selectedVoice
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate speech');
+        }
+
+        const audioBuffer = await response.arrayBuffer();
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const decodedAudio = await audioContext.decodeAudioData(audioBuffer);
+        
+        const source = audioContext.createBufferSource();
+        source.buffer = decodedAudio;
+        source.connect(audioContext.destination);
+        
+        source.onended = () => {
+          setIsSpeaking(false);
+          console.log('Finished speaking with Faith voice');
+        };
+        
+        source.start();
+        return;
+      } catch (error) {
+        console.error('ElevenLabs speech error:', error);
+        setIsSpeaking(false);
+        // Fall back to browser speech synthesis
+      }
+    }
+
+    // Fallback to browser speech synthesis
     if (!speechSynthesis) return;
     
     // Stop any current speech
@@ -324,26 +331,17 @@ export default function Home() {
     let chosenVoice = voices.find(voice => voice.name === selectedVoice);
     
     if (!chosenVoice) {
-      // Fallback: look for the best childlike voices available
+      // Fallback: look for Junior or other childlike voices
       chosenVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('alice') ||
-        voice.name.toLowerCase().includes('allison') ||
-        voice.name.toLowerCase().includes('ava') ||
-        voice.name.toLowerCase().includes('susan') ||
-        voice.name.toLowerCase().includes('zoey') ||
-        voice.name.toLowerCase().includes('zoe') ||
+        voice.name.toLowerCase().includes('junior') ||
         voice.name.toLowerCase().includes('child') ||
         voice.name.toLowerCase().includes('young')
-      ) || voices.find(voice => 
-        voice.name.toLowerCase().includes('anna') ||
-        voice.name.toLowerCase().includes('tessa') ||
-        voice.name.toLowerCase().includes('samantha')
       ) || voices.find(voice => voice.lang.startsWith('en'));
     }
     
     if (chosenVoice) {
       utterance.voice = chosenVoice;
-      console.log('Using voice for Maggie:', chosenVoice.name);
+      console.log('Using fallback voice for Maggie:', chosenVoice.name);
     }
     
     // Event handlers
@@ -367,8 +365,9 @@ export default function Home() {
   };
 
   const stopSpeaking = () => {
-    if (!speechSynthesis) return;
-    speechSynthesis.cancel();
+    if (speechSynthesis) {
+      speechSynthesis.cancel();
+    }
     setIsSpeaking(false);
   };
 
@@ -380,9 +379,9 @@ export default function Home() {
     }
   };
 
-  // Test voice function
+  // Test voice function with Faith voice
   const testVoice = () => {
-    const testPhrase = "Hi there! I'm Maggie, your friendly biblical guide!";
+    const testPhrase = "Hi there! I'm Maggie, your faithful biblical guide! By faith we understand God's love and grace.";
     speakText(testPhrase);
   };
 
@@ -603,55 +602,37 @@ export default function Home() {
                         {/* Text-to-speech controls */}
                         {speechSynthesis && (
                           <div className="flex items-center gap-2 ml-4 shrink-0">
-                            {/* Voice selector */}
+                            {/* Voice selector - ElevenLabs + Browser voices */}
                             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
                               <SelectTrigger className="w-40 h-8 text-xs">
                                 <SelectValue placeholder="Select voice" />
                               </SelectTrigger>
                               <SelectContent>
-                                {availableVoices
-                                  .filter(voice => voice.lang.startsWith('en')) // English voices only
+                                {/* ElevenLabs voices first (higher quality) */}
+                                {elevenLabsVoices.map((voice, index) => (
+                                  <SelectItem key={`el-${index}`} value={voice.voice_id}>
+                                    {voice.name} {voice.name === 'Faith' ? '✝️' : voice.category === 'childlike' ? '⭐' : voice.category === 'faith-based' ? '🙏' : '🎭'}
+                                  </SelectItem>
+                                ))}
+                                
+                                {/* Browser voices as fallback */}
+                                {!useElevenLabs && availableVoices
+                                  .filter(voice => voice.lang.startsWith('en'))
                                   .sort((a, b) => {
-                                    // Prioritize the best childlike voices
                                     const getVoiceScore = (voice: SpeechSynthesisVoice) => {
                                       const name = voice.name.toLowerCase();
-                                      // Highest priority: true childlike voices
-                                      if (name.includes('alice') || name.includes('allison') || name.includes('ava')) return 100;
-                                      if (name.includes('susan') || name.includes('zoey') || name.includes('zoe')) return 95;
-                                      if (name.includes('child') || name.includes('young') || name.includes('girl') || name.includes('junior')) return 90;
-                                      // High priority: novelty/cartoon voices
-                                      if (name.includes('bells') || name.includes('bubbles') || name.includes('good news')) return 88;
-                                      if (name.includes('trinoids') || name.includes('pipe organ') || name.includes('whisper')) return 87;
-                                      // Medium-high: premium female voices
-                                      if (name.includes('anna') || name.includes('tessa') || name.includes('samantha')) return 85;
-                                      if (name.includes('kate') || name.includes('fiona') || name.includes('emma')) return 80;
-                                      if (name.includes('olivia') || name.includes('sophia') || name.includes('victoria')) return 75;
-                                      if (name.includes('allison') || name.includes('claire') || name.includes('martha')) return 73;
-                                      // Lower: generic female voices
-                                      if (name.includes('female') || name.includes('woman')) return 70;
+                                      if (name.includes('junior')) return 100;
+                                      if (name.includes('child') || name.includes('young')) return 90;
+                                      if (name.includes('samantha') || name.includes('anna')) return 80;
                                       return 0;
                                     };
-                                    
                                     return getVoiceScore(b) - getVoiceScore(a) || a.name.localeCompare(b.name);
                                   })
-                                  .map((voice, index) => {
-                                    const name = voice.name.toLowerCase();
-                                    const isChildlike = name.includes('alice') || name.includes('allison') || name.includes('ava') || 
-                                                       name.includes('susan') || name.includes('zoey') || name.includes('zoe') ||
-                                                       name.includes('child') || name.includes('young') || name.includes('girl') || name.includes('junior');
-                                    const isNovelty = name.includes('bells') || name.includes('bubbles') || name.includes('good news') ||
-                                                     name.includes('trinoids') || name.includes('pipe organ') || name.includes('whisper');
-                                    const isFemale = name.includes('anna') || name.includes('tessa') || name.includes('samantha') ||
-                                                    name.includes('kate') || name.includes('fiona') || name.includes('emma') ||
-                                                    name.includes('olivia') || name.includes('sophia') || name.includes('victoria') ||
-                                                    name.includes('allison') || name.includes('claire') || name.includes('martha');
-                                    
-                                    return (
-                                      <SelectItem key={index} value={voice.name}>
-                                        {voice.name} {isChildlike ? '⭐' : isNovelty ? '🎭' : isFemale ? '👧' : ''}
-                                      </SelectItem>
-                                    );
-                                  })}
+                                  .map((voice, index) => (
+                                    <SelectItem key={`br-${index}`} value={voice.name}>
+                                      {voice.name} {voice.name.toLowerCase().includes('junior') ? '⭐' : '👧'}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             

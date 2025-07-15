@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertQuestionSchema } from "@shared/schema";
 import { askMaggieBibleQuestion } from "./services/openai";
+import { generateSpeechElevenLabs, getAvailableVoices, CARTOON_VOICES } from "./services/elevenlabs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Ask Maggie a Bible question
@@ -52,6 +53,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching recent questions:", error);
       res.status(500).json({ message: "Unable to fetch recent questions" });
+    }
+  });
+
+  // Get ElevenLabs cartoon voices for Maggie with Faith as priority
+  app.get("/api/cartoon-voices", async (req, res) => {
+    try {
+      const voices = await getAvailableVoices();
+      
+      // Filter for child-friendly and cartoon voices including Faith
+      const cartoonVoices = voices.filter(voice => 
+        voice.category === 'generated' || 
+        voice.name.toLowerCase().includes('child') ||
+        voice.name.toLowerCase().includes('young') ||
+        voice.name.toLowerCase().includes('faith') ||
+        voice.labels?.age === 'young' ||
+        voice.labels?.gender === 'female'
+      ).slice(0, 10);
+
+      // Combine with our curated list (Faith first)
+      const allVoices = [...CARTOON_VOICES, ...cartoonVoices];
+
+      res.json({ voices: allVoices });
+    } catch (error) {
+      console.error("Error fetching cartoon voices:", error);
+      // Fallback to curated list with Faith
+      res.json({ voices: CARTOON_VOICES });
+    }
+  });
+
+  // Generate speech with ElevenLabs using Faith voice
+  app.post("/api/generate-speech", async (req, res) => {
+    try {
+      const { text, voiceId } = req.body;
+      
+      if (!text || text.trim().length === 0) {
+        return res.status(400).json({ message: "Text is required" });
+      }
+
+      // Use Faith as default voice for biblical guidance
+      const selectedVoiceId = voiceId || "XrExE9yKIg1WjnnlVkGX";
+      
+      const audioBuffer = await generateSpeechElevenLabs(text, selectedVoiceId);
+      
+      // Set appropriate headers for audio response
+      res.set({
+        'Content-Type': 'audio/mpeg',
+        'Content-Length': audioBuffer.byteLength.toString(),
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      res.send(Buffer.from(audioBuffer));
+    } catch (error) {
+      console.error("Error generating speech:", error);
+      res.status(500).json({ 
+        message: "Failed to generate speech. Please try again!" 
+      });
     }
   });
 
