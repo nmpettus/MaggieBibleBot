@@ -91,8 +91,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Text is required" });
       }
 
-      // Use provided voice ID or default to Rachel
-      const selectedVoiceId = voiceId || "21m00Tcm4TlvDq8ikWAM";
+      // Use provided voice ID or default to Faith
+      const selectedVoiceId = voiceId || "bIQlQ61Q7WgbyZAL7IWj";
       
       const audioBuffer = await generateSpeechElevenLabs(text, selectedVoiceId);
       

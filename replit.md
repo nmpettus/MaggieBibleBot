@@ -109,8 +109,9 @@ The application is designed to be easily deployable on Replit with automatic env
 - Made website recommendations clickable links that open in new tabs
 - Enhanced biblical guidance with study websites for families and children
 - **NEW: Integrated ElevenLabs premium voice synthesis for superior audio quality**
-- **NEW: Implemented Rachel voice (ElevenLabs default) for biblical guidance instead of browser TTS**
-- **NEW: Added professional-grade text-to-speech with better cartoon character sound quality**
-- **NEW: Created fallback system: ElevenLabs first, then browser voices if API fails**
-- **NEW: Auto-selects Rachel voice marked with ✝️ symbol for biblical authenticity**
-- App is fully functional and stable for biblical Q&A with both text and voice input using premium AI voices
+- **NEW: Implemented Faith voice (user's ElevenLabs voice) for biblical guidance instead of browser TTS**
+- **NEW: Added professional-grade text-to-speech with Faith voice for authentic cartoon character sound**
+- **NEW: Created fallback system: Faith voice first, then browser voices if API fails**
+- **NEW: Auto-selects Faith voice marked with ✝️ symbol for biblical authenticity**
+- **UPDATED: Switched from Rachel to Faith voice (bIQlQ61Q7WgbyZAL7IWj) from user's account**
+- App is fully functional and stable for biblical Q&A with both text and voice input using premium Faith voice

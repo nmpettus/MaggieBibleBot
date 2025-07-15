@@ -5,19 +5,19 @@ export interface CartoonVoice {
   category: string;
 }
 
-// Faith voice for biblical guidance - placeholder until API detects actual Faith voice
+// Faith voice for biblical guidance from user's ElevenLabs account
 export const CARTOON_VOICES: CartoonVoice[] = [
   {
-    voice_id: "21m00Tcm4TlvDq8ikWAM", // Fallback - will be replaced by Faith when detected
-    name: "Rachel",
-    description: "Gentle, faithful voice (fallback until Faith is detected)",
+    voice_id: "bIQlQ61Q7WgbyZAL7IWj", // Faith - User's ElevenLabs voice
+    name: "Faith",
+    description: "Faith voice from ElevenLabs - perfect for biblical guidance and cartoon characters",
     category: "faith-based"
   }
 ];
 
 export async function generateSpeechElevenLabs(
   text: string, 
-  voiceId: string = "21m00Tcm4TlvDq8ikWAM" // Default to Rachel voice (fallback)
+  voiceId: string = "bIQlQ61Q7WgbyZAL7IWj" // Default to Faith voice
 ): Promise<ArrayBuffer> {
   try {
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
