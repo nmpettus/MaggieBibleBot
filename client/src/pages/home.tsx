@@ -93,6 +93,17 @@ export default function Home() {
     getAudioDevices();
   }, []);
 
+  const askMaggieMutation = useMutation({
+    mutationFn: async (questionText: string) => {
+      const res = await apiRequest("POST", "/api/ask-maggie", { question: questionText });
+      return await res.json() as BiblicalResponse;
+    },
+    onSuccess: (data) => {
+      setResponse(data);
+      setQuestion(""); // Clear the form
+    }
+  });
+
   // Update question when transcript changes and auto-submit
   useEffect(() => {
     console.log('Transcript changed:', transcript, 'Voice mode:', isVoiceMode);
@@ -112,17 +123,6 @@ export default function Home() {
       }
     }
   }, [transcript, isVoiceMode, listening, askMaggieMutation]);
-
-  const askMaggieMutation = useMutation({
-    mutationFn: async (questionText: string) => {
-      const res = await apiRequest("POST", "/api/ask-maggie", { question: questionText });
-      return await res.json() as BiblicalResponse;
-    },
-    onSuccess: (data) => {
-      setResponse(data);
-      setQuestion(""); // Clear the form
-    }
-  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
