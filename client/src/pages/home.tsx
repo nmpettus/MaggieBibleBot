@@ -336,13 +336,20 @@ export default function Home() {
         });
 
         if (!response.ok) {
-          // Check if it's a quota/fallback issue
-          if (response.status === 429 || response.status === 500) {
+          // Check if it's a quota exceeded issue
+          if (response.status === 429) {
+            const errorData = await response.json();
+            if (errorData.quotaExceeded) {
+              console.log('⚠️ ElevenLabs quota exceeded - Faith voice will be available when credits are renewed');
+              throw new Error('QUOTA_EXCEEDED');
+            }
+          }
+          // Check for other ElevenLabs issues that might allow fallback
+          if (response.status === 500) {
             const errorData = await response.json();
             if (errorData.fallback) {
-              console.log('ElevenLabs unavailable, using browser speech:', errorData.message);
-              // Fall through to browser TTS below
-              throw new Error('FALLBACK_TO_BROWSER');
+              console.log('ElevenLabs technical issue, using browser speech:', errorData.message);
+              throw new Error('FAITH_VOICE_ERROR');
             }
           }
           throw new Error('Failed to generate speech');
@@ -427,13 +434,18 @@ export default function Home() {
         console.error('ElevenLabs speech error:', error);
         setIsSpeaking(false);
         
-        // Always try to use ElevenLabs Faith voice, but handle errors gracefully
-        if (error.message === 'FALLBACK_TO_BROWSER') {
-          console.log('⚠️ ElevenLabs quota exceeded - Faith voice unavailable temporarily');
+        // Always prioritize Faith voice - never automatically fallback for quota issues
+        if (error.message === 'QUOTA_EXCEEDED') {
+          console.log('⚠️ Faith voice quota exceeded - will be available when credits are renewed');
+          // Stop here - don't use browser voice as fallback for quota issues
+          setIsSpeaking(false);
+          return;
+        } else if (error.message === 'FAITH_VOICE_ERROR') {
+          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable due to technical issue');
+          // Only fallback for technical failures, not quota issues
         } else {
-          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable, will retry next time');
+          console.log('⚠️ ElevenLabs service unavailable, technical issue detected');
         }
-        // Only fall back when absolutely necessary
       }
     }
 

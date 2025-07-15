@@ -107,15 +107,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating speech:", error);
       
-      // Handle quota exceeded specifically
+      // Handle quota exceeded specifically - don't suggest fallback
       if (error.message === 'QUOTA_EXCEEDED') {
         res.status(429).json({ 
-          message: "ElevenLabs quota exceeded. Using browser voice instead.",
-          fallback: true
+          message: "Faith voice quota exceeded. Please wait for credits to renew.",
+          quotaExceeded: true
         });
       } else {
         res.status(500).json({ 
-          message: "Failed to generate speech. Using browser voice instead.",
+          message: "Faith voice temporarily unavailable. Please try again later.",
           fallback: true 
         });
       }
