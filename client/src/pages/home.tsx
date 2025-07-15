@@ -37,6 +37,8 @@ export default function Home() {
   const [useElevenLabs, setUseElevenLabs] = useState<boolean>(true); // Always try ElevenLabs Faith voice first
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
   const [highlightTimers, setHighlightTimers] = useState<NodeJS.Timeout[]>([]);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice");
   
   // Function to render text with word highlighting
   const renderHighlightedText = (text: string) => {
@@ -98,9 +100,11 @@ export default function Home() {
         
         if (faithVoice) {
           setSelectedVoice(faithVoice.voice_id);
+          setCurrentVoiceInfo("Faith Voice ✝️");
           console.log('Auto-selected Faith voice for Maggie:', faithVoice.name);
         } else if (fallbackVoice) {
           setSelectedVoice(fallbackVoice.voice_id);
+          setCurrentVoiceInfo("Rachel Voice");
           console.log('Auto-selected Rachel voice for Maggie (Faith not found):', fallbackVoice.name);
         }
       } catch (error) {
@@ -299,8 +303,7 @@ export default function Home() {
     }
   };
 
-  // Keep track of current audio for cleanup
-  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  // Keep track of current audio for cleanup - moved to top with other state
 
   // Text-to-speech functions with ElevenLabs integration
   const speakText = async (text: string) => {
@@ -364,6 +367,7 @@ export default function Home() {
         
         // Set as current audio for cleanup
         setCurrentAudio(audio);
+        setCurrentVoiceInfo("Faith Voice ✝️");
         
         // Safari requires user interaction for autoplay, but this is triggered by user action
         audio.oncanplaythrough = () => {
@@ -461,24 +465,25 @@ export default function Home() {
     // Create utterance with child-optimized settings
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Natural female voice optimization settings
-    utterance.rate = 0.8; // Slightly slower for natural, clear speech
-    utterance.pitch = 1.2; // Moderately higher pitch for feminine, youthful voice
+    // Childlike female voice optimization settings
+    utterance.rate = 0.7; // Slower for childlike speech pattern
+    utterance.pitch = 1.4; // Higher pitch for more childlike, youthful voice
     utterance.volume = 1.0;
     
     // Find the best child-like voice
     const voices = speechSynthesis.getVoices();
     
-    // Priority order for natural female voices (most natural first)
-    const naturalFemaleVoices = [
-      'samantha', 'karen', 'vicki', 'shelley', 'flo', 'kathy',
-      'moira', 'tessa', 'anna', 'sara', 'zuzana', 'melina'
+    // Priority order for childlike and natural female voices
+    const childlikeFemaleVoices = [
+      'junior', 'kid', 'child', 'young', 'girl', 'toy', 'baby', 'little',
+      'karen', 'vicki', 'samantha', 'shelley', 'flo', 'kathy', 'sandy',
+      'moira', 'tessa', 'anna', 'sara', 'zuzana', 'melina', 'daria'
     ];
     
     let chosenVoice = null;
     
-    // Try to find the most natural female voice
-    for (const pattern of naturalFemaleVoices) {
+    // Try to find the most childlike female voice
+    for (const pattern of childlikeFemaleVoices) {
       chosenVoice = voices.find(voice => 
         voice.name.toLowerCase().includes(pattern) && 
         voice.lang.startsWith('en')
@@ -493,7 +498,8 @@ export default function Home() {
     
     if (chosenVoice) {
       utterance.voice = chosenVoice;
-      console.log('Using enhanced natural female voice:', chosenVoice.name);
+      setCurrentVoiceInfo(chosenVoice.name);
+      console.log('Using enhanced childlike female voice:', chosenVoice.name);
     }
     
     // Event handlers
@@ -872,31 +878,36 @@ export default function Home() {
                           <p className="text-white/80 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">Based on the New Testament covenant of Grace</p>
                         </div>
                         
-                        {/* Simplified Listen button only */}
+                        {/* Listen button with voice indicator */}
                         {speechSynthesis && (
                           <div className="flex items-center ml-4 shrink-0">
-                            <Button
-                              onClick={toggleSpeech}
-                              size="sm"
-                              disabled={!response}
-                              className={`magic-button px-6 py-2 font-semibold border-0 ${
-                                isSpeaking 
-                                  ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 pulse-glow'
-                                  : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
-                              } text-white`}
-                            >
-                              {isSpeaking ? (
-                                <>
-                                  <VolumeX className="w-5 h-5 mr-2" />
-                                  Stop
-                                </>
-                              ) : (
-                                <>
-                                  <Volume2 className="w-5 h-5 mr-2" />
-                                  Listen ✝️
-                                </>
-                              )}
-                            </Button>
+                            <div className="flex flex-col items-end">
+                              <Button
+                                onClick={toggleSpeech}
+                                size="sm"
+                                disabled={!response}
+                                className={`magic-button px-6 py-2 font-semibold border-0 ${
+                                  isSpeaking 
+                                    ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 pulse-glow'
+                                    : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                                } text-white`}
+                              >
+                                {isSpeaking ? (
+                                  <>
+                                    <VolumeX className="w-5 h-5 mr-2" />
+                                    Stop
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="w-5 h-5 mr-2" />
+                                    Listen ✝️
+                                  </>
+                                )}
+                              </Button>
+                              <div className="text-xs text-white/70 mt-1 px-2 py-1 bg-white/10 rounded-md backdrop-blur-sm">
+                                Voice: {currentVoiceInfo}
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
