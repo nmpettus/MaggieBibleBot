@@ -24,6 +24,7 @@ export default function Home() {
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [isTestingMic, setIsTestingMic] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState<string>("");
   
   // Speech recognition hook
   const {
@@ -32,6 +33,29 @@ export default function Home() {
     resetTranscript,
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
+
+  // Detect browser
+  useEffect(() => {
+    const detectBrowser = () => {
+      const userAgent = navigator.userAgent;
+      let browser = "Unknown";
+      
+      if (userAgent.includes("Chrome") && !userAgent.includes("Edge")) {
+        browser = "Chrome";
+      } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
+        browser = "Safari";
+      } else if (userAgent.includes("Firefox")) {
+        browser = "Firefox";
+      } else if (userAgent.includes("Edge")) {
+        browser = "Edge";
+      }
+      
+      setBrowserInfo(browser);
+      console.log('Browser detected:', browser);
+    };
+    
+    detectBrowser();
+  }, []);
 
   // Get available audio devices
   useEffect(() => {
@@ -346,6 +370,7 @@ export default function Home() {
                   <div className="mt-2 p-3 bg-gray-100 rounded-md border">
                     <div className="text-xs text-gray-600 mb-1">Debug Info:</div>
                     <div className="text-sm space-y-1">
+                      <div>Browser: {browserInfo}</div>
                       <div>Listening: {listening ? 'YES' : 'NO'}</div>
                       <div>Voice mode: {isVoiceMode ? 'ON' : 'OFF'}</div>
                       <div>Transcript: "{transcript || 'None'}"</div>
@@ -355,7 +380,8 @@ export default function Home() {
                     </div>
                     <div className="text-xs text-gray-500 mt-2 space-y-1">
                       <div>💡 Try the "Test Mic" button to check if your microphone is working</div>
-                      <div>🔧 If AirPods don't work, try selecting "MacBook Pro Microphone (Built-in)" instead</div>
+                      <div>🔧 If speech recognition doesn't work, try switching to Chrome or Safari</div>
+                      <div>📱 Current browser: {browserInfo}</div>
                     </div>
                   </div>
                 )}
