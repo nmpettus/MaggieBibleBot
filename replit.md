@@ -118,4 +118,8 @@ The application is designed to be easily deployable on Replit with automatic env
 - **NEW: Enforced Faith voice as exclusive voice choice - system always prioritizes ElevenLabs Faith voice**
 - **NEW: Enhanced error handling for ElevenLabs quota issues with graceful fallback messaging**
 - **NEW: Question input box now features animated light border that runs around the perimeter**
-- App is fully functional and stable for biblical Q&A with both text and voice input using premium Faith voice
+- **FIXED: Removed all browser voice fallbacks - app exclusively uses Faith voice or remains silent**
+- **UPDATED: Added user-visible alerts when Faith voice is unavailable due to quota or technical issues**
+- **ENHANCED: Improved quota detection in ElevenLabs service to catch various error formats**
+- **CURRENT STATUS: ElevenLabs quota exceeded (0 credits remaining) - Faith voice temporarily unavailable**
+- App provides clear feedback when Faith voice cannot be used, maintains exclusive voice policy

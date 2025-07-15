@@ -437,17 +437,20 @@ export default function Home() {
         // Always prioritize Faith voice - never automatically fallback for quota issues
         if (error.message === 'QUOTA_EXCEEDED') {
           console.log('⚠️ Faith voice quota exceeded - will be available when credits are renewed');
-          // Stop here - don't use browser voice as fallback for quota issues
+          // Show user-visible message about Faith voice unavailability
+          alert('Faith voice is temporarily unavailable (quota exceeded). Audio will resume when ElevenLabs credits are renewed.');
           setIsSpeaking(false);
           return;
         } else if (error.message === 'FAITH_VOICE_ERROR') {
           console.log('⚠️ ElevenLabs Faith voice temporarily unavailable due to technical issue');
-          // Stop here - only use Faith voice, never browser fallback
+          // Show user-visible message about technical issue
+          alert('Faith voice is temporarily unavailable (technical issue). Please try again later.');
           setIsSpeaking(false);
           return;
         } else {
           console.log('⚠️ ElevenLabs service unavailable, technical issue detected');
-          // Stop here - only use Faith voice, never browser fallback
+          // Show user-visible message about service unavailability
+          alert('Faith voice service is currently unavailable. Please try again later.');
           setIsSpeaking(false);
           return;
         }
