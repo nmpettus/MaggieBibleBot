@@ -87,7 +87,9 @@ export default function Home() {
             voice.name.toLowerCase().includes('child') ||
             voice.name.toLowerCase().includes('kid') ||
             voice.name.toLowerCase().includes('young') ||
-            voice.name.toLowerCase().includes('girl')
+            voice.name.toLowerCase().includes('girl') ||
+            voice.name.toLowerCase().includes('junior') ||
+            voice.name.toLowerCase().includes('little')
           )
         );
         
@@ -100,12 +102,31 @@ export default function Home() {
             voice.name.toLowerCase().includes('fiona') ||
             voice.name.toLowerCase().includes('emma') ||
             voice.name.toLowerCase().includes('olivia') ||
-            voice.name.toLowerCase().includes('sophia')
+            voice.name.toLowerCase().includes('sophia') ||
+            voice.name.toLowerCase().includes('victoria') ||
+            voice.name.toLowerCase().includes('allison') ||
+            voice.name.toLowerCase().includes('claire') ||
+            voice.name.toLowerCase().includes('martha')
           )
         );
         
-        // Select the best voice available
-        const preferredVoice = bestChildlikeVoices[0] || goodFemaleVoices[0] || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'));
+        // Also look for specialty/novelty voices
+        const noveltyVoices = voices.filter(voice => 
+          voice.lang.startsWith('en') && (
+            voice.name.toLowerCase().includes('bells') ||
+            voice.name.toLowerCase().includes('bubbles') ||
+            voice.name.toLowerCase().includes('good news') ||
+            voice.name.toLowerCase().includes('junior') ||
+            voice.name.toLowerCase().includes('pipe organ') ||
+            voice.name.toLowerCase().includes('trinoids') ||
+            voice.name.toLowerCase().includes('whisper') ||
+            voice.name.toLowerCase().includes('deranged') ||
+            voice.name.toLowerCase().includes('hysterical')
+          )
+        );
+        
+        // Select the best voice available (prefer childlike, then novelty, then female)
+        const preferredVoice = bestChildlikeVoices[0] || noveltyVoices[0] || goodFemaleVoices[0] || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'));
         
         if (preferredVoice) {
           setSelectedVoice(preferredVoice.name);
@@ -294,8 +315,8 @@ export default function Home() {
     const utterance = new SpeechSynthesisUtterance(text);
     
     // Configure voice settings for a more childlike/cartoon sound
-    utterance.rate = 1.1; // Slightly faster for more animated feel
-    utterance.pitch = 1.3; // Higher pitch for cartoon dog voice
+    utterance.rate = 0.7; // Slower rate for better comprehension
+    utterance.pitch = 1.4; // Higher pitch for cartoon dog voice
     utterance.volume = 1.0;
     
     // Use selected voice or find the best available
@@ -594,12 +615,19 @@ export default function Home() {
                                     // Prioritize the best childlike voices
                                     const getVoiceScore = (voice: SpeechSynthesisVoice) => {
                                       const name = voice.name.toLowerCase();
+                                      // Highest priority: true childlike voices
                                       if (name.includes('alice') || name.includes('allison') || name.includes('ava')) return 100;
                                       if (name.includes('susan') || name.includes('zoey') || name.includes('zoe')) return 95;
-                                      if (name.includes('child') || name.includes('young') || name.includes('girl')) return 90;
+                                      if (name.includes('child') || name.includes('young') || name.includes('girl') || name.includes('junior')) return 90;
+                                      // High priority: novelty/cartoon voices
+                                      if (name.includes('bells') || name.includes('bubbles') || name.includes('good news')) return 88;
+                                      if (name.includes('trinoids') || name.includes('pipe organ') || name.includes('whisper')) return 87;
+                                      // Medium-high: premium female voices
                                       if (name.includes('anna') || name.includes('tessa') || name.includes('samantha')) return 85;
                                       if (name.includes('kate') || name.includes('fiona') || name.includes('emma')) return 80;
                                       if (name.includes('olivia') || name.includes('sophia') || name.includes('victoria')) return 75;
+                                      if (name.includes('allison') || name.includes('claire') || name.includes('martha')) return 73;
+                                      // Lower: generic female voices
                                       if (name.includes('female') || name.includes('woman')) return 70;
                                       return 0;
                                     };
@@ -610,14 +638,17 @@ export default function Home() {
                                     const name = voice.name.toLowerCase();
                                     const isChildlike = name.includes('alice') || name.includes('allison') || name.includes('ava') || 
                                                        name.includes('susan') || name.includes('zoey') || name.includes('zoe') ||
-                                                       name.includes('child') || name.includes('young') || name.includes('girl');
+                                                       name.includes('child') || name.includes('young') || name.includes('girl') || name.includes('junior');
+                                    const isNovelty = name.includes('bells') || name.includes('bubbles') || name.includes('good news') ||
+                                                     name.includes('trinoids') || name.includes('pipe organ') || name.includes('whisper');
                                     const isFemale = name.includes('anna') || name.includes('tessa') || name.includes('samantha') ||
                                                     name.includes('kate') || name.includes('fiona') || name.includes('emma') ||
-                                                    name.includes('olivia') || name.includes('sophia');
+                                                    name.includes('olivia') || name.includes('sophia') || name.includes('victoria') ||
+                                                    name.includes('allison') || name.includes('claire') || name.includes('martha');
                                     
                                     return (
                                       <SelectItem key={index} value={voice.name}>
-                                        {voice.name} {isChildlike ? '⭐' : isFemale ? '👧' : ''}
+                                        {voice.name} {isChildlike ? '⭐' : isNovelty ? '🎭' : isFemale ? '👧' : ''}
                                       </SelectItem>
                                     );
                                   })}
