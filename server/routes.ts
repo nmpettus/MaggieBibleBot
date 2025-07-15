@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertQuestionSchema } from "@shared/schema";
 import { askMaggieBibleQuestion } from "./services/openai";
 import { generateSpeechElevenLabs, getAvailableVoices, CARTOON_VOICES } from "./services/elevenlabs";
+import { generateSpeechGoogleTTS, getGoogleTTSVoices } from "./services/googleTTS";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Ask Maggie a Bible question
@@ -82,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate speech with ElevenLabs using Faith voice
+  // Generate speech with ElevenLabs Faith voice and Google TTS fallback
   app.post("/api/generate-speech", async (req, res) => {
     try {
       const { text, voiceId } = req.body;
@@ -91,34 +92,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Text is required" });
       }
 
-      // Use provided voice ID or default to Faith
-      const selectedVoiceId = voiceId || "bIQlQ61Q7WgbyZAL7IWj";
+      // First, try ElevenLabs Faith voice
+      try {
+        const selectedVoiceId = voiceId || "bIQlQ61Q7WgbyZAL7IWj";
+        console.log(`🎤 Attempting Faith voice (ElevenLabs): ${selectedVoiceId}`);
+        
+        const audioBuffer = await generateSpeechElevenLabs(text, selectedVoiceId);
+        
+        // Set appropriate headers for audio response
+        res.set({
+          'Content-Type': 'audio/mpeg',
+          'Content-Length': audioBuffer.byteLength.toString(),
+          'Cache-Control': 'public, max-age=3600'
+        });
+        
+        console.log(`✅ Faith voice succeeded: ${audioBuffer.byteLength} bytes`);
+        return res.send(Buffer.from(audioBuffer));
+        
+      } catch (elevenLabsError) {
+        console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
+        
+        // If ElevenLabs fails, try Google TTS as premium fallback
+        try {
+          console.log(`🔊 Falling back to Google TTS natural child voice`);
+          
+          const googleAudioBuffer = await generateSpeechGoogleTTS(text, 'en-US-Journey-F');
+          
+          // Set appropriate headers for audio response
+          res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': googleAudioBuffer.byteLength.toString(),
+            'Cache-Control': 'public, max-age=3600'
+          });
+          
+          console.log(`✅ Google TTS succeeded: ${googleAudioBuffer.byteLength} bytes`);
+          return res.send(googleAudioBuffer);
+          
+        } catch (googleError) {
+          console.log(`⚠️ Google TTS also failed: ${googleError.message}`);
+          
+          // Both premium services failed - return error
+          throw new Error(`Both premium TTS services failed: ${elevenLabsError.message}, ${googleError.message}`);
+        }
+      }
       
-      const audioBuffer = await generateSpeechElevenLabs(text, selectedVoiceId);
-      
-      // Set appropriate headers for audio response
-      res.set({
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': audioBuffer.byteLength.toString(),
-        'Cache-Control': 'public, max-age=3600'
-      });
-      
-      res.send(Buffer.from(audioBuffer));
     } catch (error) {
       console.error("Error generating speech:", error);
       
-      // Handle quota exceeded specifically - don't suggest fallback
+      // Handle specific errors
       if (error.message === 'QUOTA_EXCEEDED') {
         res.status(429).json({ 
-          message: "Faith voice quota exceeded. Please wait for credits to renew.",
+          message: "Faith voice quota exceeded. Using enhanced browser voice.",
           quotaExceeded: true
+        });
+      } else if (error.message === 'GOOGLE_AUTH_ERROR') {
+        res.status(500).json({ 
+          message: "Premium voice services need setup. Using enhanced browser voice.",
+          fallback: true 
         });
       } else {
         res.status(500).json({ 
-          message: "Faith voice temporarily unavailable. Please try again later.",
+          message: "Premium voice services temporarily unavailable. Using enhanced browser voice.",
           fallback: true 
         });
       }
+    }
+  });
+
+  // Get Google TTS voices
+  app.get("/api/google-voices", async (req, res) => {
+    try {
+      const voices = await getGoogleTTSVoices();
+      res.json({ voices });
+    } catch (error) {
+      console.error("Error fetching Google TTS voices:", error);
+      res.status(500).json({ message: "Unable to fetch Google TTS voices" });
     }
   });
 

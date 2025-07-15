@@ -461,24 +461,24 @@ export default function Home() {
     // Create utterance with child-optimized settings
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Child voice optimization settings
-    utterance.rate = 0.6; // Slower rate for clarity and child-like speech
-    utterance.pitch = 1.8; // Higher pitch for child-like voice
+    // Natural female voice optimization settings
+    utterance.rate = 0.8; // Slightly slower for natural, clear speech
+    utterance.pitch = 1.2; // Moderately higher pitch for feminine, youthful voice
     utterance.volume = 1.0;
     
     // Find the best child-like voice
     const voices = speechSynthesis.getVoices();
     
-    // Priority order for child-like voices
-    const childVoicePatterns = [
-      'junior', 'child', 'young', 'kid', 'boy', 'girl',
-      'samantha', 'alex', 'karen', 'vicki', 'fred'
+    // Priority order for natural female voices (most natural first)
+    const naturalFemaleVoices = [
+      'samantha', 'karen', 'vicki', 'shelley', 'flo', 'kathy',
+      'moira', 'tessa', 'anna', 'sara', 'zuzana', 'melina'
     ];
     
     let chosenVoice = null;
     
-    // Try to find a good child-like voice
-    for (const pattern of childVoicePatterns) {
+    // Try to find the most natural female voice
+    for (const pattern of naturalFemaleVoices) {
       chosenVoice = voices.find(voice => 
         voice.name.toLowerCase().includes(pattern) && 
         voice.lang.startsWith('en')
@@ -493,20 +493,20 @@ export default function Home() {
     
     if (chosenVoice) {
       utterance.voice = chosenVoice;
-      console.log('Using enhanced child-optimized voice:', chosenVoice.name);
+      console.log('Using enhanced natural female voice:', chosenVoice.name);
     }
     
     // Event handlers
     utterance.onstart = () => {
       setIsSpeaking(true);
-      console.log('Enhanced child voice started speaking...');
+      console.log('Enhanced natural female voice started speaking...');
       startWordHighlighting(text);
     };
     
     utterance.onend = () => {
       setIsSpeaking(false);
       stopWordHighlighting();
-      console.log('Enhanced child voice finished speaking');
+      console.log('Enhanced natural female voice finished speaking');
     };
     
     utterance.onerror = (event) => {
