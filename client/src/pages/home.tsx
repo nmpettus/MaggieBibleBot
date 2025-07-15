@@ -38,7 +38,7 @@ export default function Home() {
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
   const [highlightTimers, setHighlightTimers] = useState<NodeJS.Timeout[]>([]);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice ✝️");
+  const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice");
   
   // Function to render text with word highlighting
   const renderHighlightedText = (text: string) => {
@@ -100,7 +100,7 @@ export default function Home() {
         
         if (faithVoice) {
           setSelectedVoice(faithVoice.voice_id);
-          setCurrentVoiceInfo("Faith Voice ✝️");
+          setCurrentVoiceInfo("Faith Voice");
           console.log('Auto-selected Faith voice for Maggie:', faithVoice.name);
         } else if (fallbackVoice) {
           setSelectedVoice(fallbackVoice.voice_id);
@@ -367,7 +367,7 @@ export default function Home() {
         
         // Set as current audio for cleanup
         setCurrentAudio(audio);
-        setCurrentVoiceInfo("Faith Voice ✝️");
+        setCurrentVoiceInfo("Faith Voice");
         
         // Safari requires user interaction for autoplay, but this is triggered by user action
         audio.oncanplaythrough = () => {
@@ -905,8 +905,8 @@ export default function Home() {
                                   </>
                                 )}
                               </Button>
-                              <div className="text-xs text-white/70 mt-1 px-2 py-1 bg-white/10 rounded-md backdrop-blur-sm">
-                                Voice: {currentVoiceInfo || 'Loading...'}
+                              <div className="text-xs text-white/80 mt-1 px-3 py-1 bg-black/20 rounded-md backdrop-blur-sm border border-white/20">
+                                {currentVoiceInfo || 'Loading Voice...'}
                               </div>
                             </div>
                           </div>
