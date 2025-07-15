@@ -451,9 +451,25 @@ export default function Home() {
                           <Card className="bg-blue-50/60 border-l-4 border-l-blue-500">
                             <CardContent className="p-4">
                               <h4 className="font-semibold text-foreground text-sm mb-2">📚 For Further Study (Age-Appropriate):</h4>
-                              <p className="text-muted-foreground text-sm">
-                                {response.recommendedResources}
-                              </p>
+                              <div className="text-muted-foreground text-sm">
+                                {response.recommendedResources.split(/(\[.*?\]\(https?:\/\/.*?\))/).map((part, index) => {
+                                  const linkMatch = part.match(/\[(.*?)\]\((https?:\/\/.*?)\)/);
+                                  if (linkMatch) {
+                                    return (
+                                      <a 
+                                        key={index}
+                                        href={linkMatch[2]} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                                      >
+                                        {linkMatch[1]}
+                                      </a>
+                                    );
+                                  }
+                                  return part;
+                                })}
+                              </div>
                             </CardContent>
                           </Card>
                         )}

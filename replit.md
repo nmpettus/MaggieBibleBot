@@ -103,4 +103,9 @@ The application is designed to be easily deployable on Replit with automatic env
 - Implemented comprehensive speech recognition system using react-speech-recognition library
 - Added microphone device selection and testing functionality
 - Discovered AirPods compatibility issues with Web Speech API - works better with built-in microphone
-- App is fully functional and stable for biblical Q&A with clean text input interface
+- Implemented 2-second silence auto-submission for voice recognition
+- Added age-appropriate Christian website URLs to biblical responses
+- Integrated trusted resources: The Bible Project, Trueway Kids, Focus on the Family, Creative Bible Study, Gospel Project, Bible for Children
+- Made website recommendations clickable links that open in new tabs
+- Enhanced biblical guidance with study websites for families and children
+- App is fully functional and stable for biblical Q&A with both text and voice input

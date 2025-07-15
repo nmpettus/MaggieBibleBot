@@ -31,7 +31,7 @@ Please respond in JSON format with the following structure:
 {
   "answer": "Your warm, biblical response here",
   "scriptureReferences": "Relevant Bible verse citations",
-  "recommendedResources": "Choose 2-3 age-appropriate Christian websites from: The Bible Project (bibleproject.com), Trueway Kids (truewaykids.com), Focus on the Family (focusonthefamily.com), Creative Bible Study (creativebiblestudy.com), Gospel Project (gospelproject.lifeway.com), Bible for Children (bibleforchildren.org)"
+  "recommendedResources": "Choose 2-3 age-appropriate Christian websites with clickable links formatted as: [Website Name](https://website.com) from: [The Bible Project](https://bibleproject.com), [Trueway Kids](https://truewaykids.com), [Focus on the Family](https://focusonthefamily.com), [Creative Bible Study](https://creativebiblestudy.com), [Gospel Project](https://gospelproject.lifeway.com), [Bible for Children](https://bibleforchildren.org)"
 }`;
 
     const response = await openai.chat.completions.create({
