@@ -44,8 +44,8 @@ export async function generateSpeechElevenLabs(
       const errorText = await response.text();
       console.log('ElevenLabs API error details:', errorText);
       
-      // Check if it's a quota issue
-      if (response.status === 401 && errorText.includes('quota_exceeded')) {
+      // Check if it's a quota issue - can be various status codes
+      if (errorText.includes('quota_exceeded') || errorText.includes('credits remaining')) {
         throw new Error('QUOTA_EXCEEDED');
       }
       

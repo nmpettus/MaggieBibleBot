@@ -442,81 +442,32 @@ export default function Home() {
           return;
         } else if (error.message === 'FAITH_VOICE_ERROR') {
           console.log('⚠️ ElevenLabs Faith voice temporarily unavailable due to technical issue');
-          // Only fallback for technical failures, not quota issues
+          // Stop here - only use Faith voice, never browser fallback
+          setIsSpeaking(false);
+          return;
         } else {
           console.log('⚠️ ElevenLabs service unavailable, technical issue detected');
+          // Stop here - only use Faith voice, never browser fallback
+          setIsSpeaking(false);
+          return;
         }
       }
     }
 
-    // Fallback to browser speech synthesis
-    if (!speechSynthesis) return;
-    
-    // Stop any current speech
-    speechSynthesis.cancel();
-    
-    // Create utterance
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Configure voice settings for a more childlike/cartoon sound
-    utterance.rate = 0.7; // Slower rate for better comprehension
-    utterance.pitch = 1.4; // Higher pitch for cartoon dog voice
-    utterance.volume = 1.0;
-    
-    // Use selected voice or find the best available
-    const voices = speechSynthesis.getVoices();
-    let chosenVoice = voices.find(voice => voice.name === selectedVoice);
-    
-    if (!chosenVoice) {
-      // Fallback: look for Junior or other childlike voices
-      chosenVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('junior') ||
-        voice.name.toLowerCase().includes('child') ||
-        voice.name.toLowerCase().includes('young')
-      ) || voices.find(voice => voice.lang.startsWith('en'));
-    }
-    
-    if (chosenVoice) {
-      utterance.voice = chosenVoice;
-      console.log('Using fallback voice for Maggie:', chosenVoice.name);
-    }
-    
-    // Event handlers
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      console.log('Starting to speak...');
-      // Start word highlighting for browser speech
-      startWordHighlighting(text);
-    };
-    
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      stopWordHighlighting();
-      console.log('Finished speaking');
-    };
-    
-    utterance.onerror = (event) => {
-      setIsSpeaking(false);
-      console.error('Speech error:', event.error);
-    };
-    
-    // Start speaking
-    speechSynthesis.speak(utterance);
+    // REMOVED: No fallback to browser speech synthesis - Faith voice only
+    console.log('⚠️ Faith voice not available - no audio will play');
+    setIsSpeaking(false);
+    return;
   };
 
   const stopSpeaking = () => {
     console.log('Stopping speech...');
     
-    // Stop ElevenLabs audio if playing
+    // Stop ElevenLabs Faith voice audio if playing
     if (currentAudio) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       setCurrentAudio(null);
-    }
-    
-    // Stop browser speech synthesis
-    if (speechSynthesis) {
-      speechSynthesis.cancel();
     }
     
     setIsSpeaking(false);
