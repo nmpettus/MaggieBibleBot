@@ -35,6 +35,27 @@ export default function Home() {
   const [selectedVoice, setSelectedVoice] = useState<string>("");
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
   const [useElevenLabs, setUseElevenLabs] = useState<boolean>(true);
+  const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
+  const [highlightTimer, setHighlightTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Function to render text with word highlighting
+  const renderHighlightedText = (text: string) => {
+    const words = text.split(/\s+/);
+    
+    return words.map((word, index) => (
+      <span
+        key={index}
+        className={`${
+          currentWordIndex === index
+            ? 'bg-yellow-300 text-black px-1 rounded-sm transition-all duration-300 shadow-lg'
+            : ''
+        }`}
+      >
+        {word}
+        {index < words.length - 1 ? ' ' : ''}
+      </span>
+    ));
+  };
   
   // Speech recognition hook
   const {
@@ -337,6 +358,8 @@ export default function Home() {
           audio.play()
             .then(() => {
               console.log('✅ Audio playback started successfully');
+              // Start word highlighting when audio starts
+              startWordHighlighting(text);
             })
             .catch(error => {
               console.error('Audio play error (trying fallback):', error);
@@ -360,6 +383,7 @@ export default function Home() {
         audio.onended = () => {
           setIsSpeaking(false);
           setCurrentAudio(null);
+          stopWordHighlighting();
           const totalTime = Date.now() - startTime;
           console.log(`✅ Faith finished speaking (${totalTime}ms total)`);
           URL.revokeObjectURL(audioUrl); // Clean up memory
@@ -432,10 +456,13 @@ export default function Home() {
     utterance.onstart = () => {
       setIsSpeaking(true);
       console.log('Starting to speak...');
+      // Start word highlighting for browser speech
+      startWordHighlighting(text);
     };
     
     utterance.onend = () => {
       setIsSpeaking(false);
+      stopWordHighlighting();
       console.log('Finished speaking');
     };
     
@@ -466,10 +493,48 @@ export default function Home() {
     setIsSpeaking(false);
   };
 
+  // Function to start word highlighting
+  const startWordHighlighting = (text: string) => {
+    const words = text.split(/\s+/);
+    const averageWordsPerMinute = 150; // Average speech rate
+    const millisecondsPerWord = (60 / averageWordsPerMinute) * 1000;
+    
+    setCurrentWordIndex(0);
+    
+    // Clear any existing timer
+    if (highlightTimer) {
+      clearInterval(highlightTimer);
+    }
+    
+    // Start highlighting words sequentially
+    const timer = setInterval(() => {
+      setCurrentWordIndex((prevIndex) => {
+        const nextIndex = prevIndex + 1;
+        if (nextIndex >= words.length) {
+          clearInterval(timer);
+          setCurrentWordIndex(-1);
+          return -1;
+        }
+        return nextIndex;
+      });
+    }, millisecondsPerWord);
+    
+    setHighlightTimer(timer);
+  };
+
+  const stopWordHighlighting = () => {
+    if (highlightTimer) {
+      clearInterval(highlightTimer);
+      setHighlightTimer(null);
+    }
+    setCurrentWordIndex(-1);
+  };
+
   const toggleSpeech = () => {
     console.log('Toggle speech clicked. isSpeaking:', isSpeaking, 'response:', response);
     if (isSpeaking) {
       stopSpeaking();
+      stopWordHighlighting();
     } else if (response) {
       console.log('Speaking response answer:', response.answer?.substring(0, 50) + '...');
       speakText(response.answer);
@@ -761,10 +826,10 @@ export default function Home() {
                         )}
                       </div>
                       
-                      {/* Response content */}
+                      {/* Response content with word highlighting */}
                       <div className="prose prose-gray max-w-none">
                         <p className="text-foreground leading-relaxed mb-4">
-                          {response.answer}
+                          {renderHighlightedText(response.answer)}
                         </p>
                         
                         {/* Scripture references */}
