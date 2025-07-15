@@ -17,7 +17,7 @@ export const CARTOON_VOICES: CartoonVoice[] = [
 
 export async function generateSpeechElevenLabs(
   text: string, 
-  voiceId: string = "21m00Tcm4TlvDq8ikWAM" // Default to Rachel voice
+  voiceId: string = "21m00Tcm4TlvDq8ikWAM" // Default to Rachel voice (fallback)
 ): Promise<ArrayBuffer> {
   try {
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -52,6 +52,45 @@ export async function generateSpeechElevenLabs(
 }
 
 export async function getAvailableVoices(): Promise<any[]> {
-  // Return only the Faith voice for now
-  return CARTOON_VOICES;
+  try {
+    // Try to fetch voices from ElevenLabs API
+    const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+      headers: {
+        'Accept': 'application/json',
+        'xi-api-key': process.env.ELEVENLABS_API_KEY || '',
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const voices = data.voices || [];
+      
+      // Look for Faith voice specifically
+      const faithVoice = voices.find((v: any) => v.name.toLowerCase() === 'faith');
+      
+      if (faithVoice) {
+        return [{
+          voice_id: faithVoice.voice_id,
+          name: faithVoice.name,
+          description: 'Faith voice from ElevenLabs - perfect for biblical guidance',
+          category: 'faith-based'
+        }];
+      }
+      
+      // Return all available voices if Faith not found
+      return voices.map((v: any) => ({
+        voice_id: v.voice_id,
+        name: v.name,
+        description: v.description || `${v.name} voice from ElevenLabs`,
+        category: v.category || 'general'
+      }));
+    }
+    
+    // Fallback to Rachel if API fails
+    return CARTOON_VOICES;
+  } catch (error) {
+    console.error('Error fetching ElevenLabs voices:', error);
+    return CARTOON_VOICES;
+  }
 }

@@ -71,11 +71,16 @@ export default function Home() {
         const data = await response.json();
         setElevenLabsVoices(data.voices || []);
         
-        // Auto-select Rachel voice for biblical guidance
-        const rachelVoice = data.voices.find((v: any) => v.name === 'Rachel');
-        if (rachelVoice) {
-          setSelectedVoice(rachelVoice.voice_id);
-          console.log('Auto-selected Rachel voice for Maggie:', rachelVoice.name);
+        // Auto-select Faith voice for biblical guidance (or Rachel as fallback)
+        const faithVoice = data.voices.find((v: any) => v.name.toLowerCase() === 'faith');
+        const fallbackVoice = data.voices.find((v: any) => v.name === 'Rachel');
+        
+        if (faithVoice) {
+          setSelectedVoice(faithVoice.voice_id);
+          console.log('Auto-selected Faith voice for Maggie:', faithVoice.name);
+        } else if (fallbackVoice) {
+          setSelectedVoice(fallbackVoice.voice_id);
+          console.log('Auto-selected Rachel voice for Maggie (Faith not found):', fallbackVoice.name);
         }
       } catch (error) {
         console.error('Error loading ElevenLabs voices:', error);
@@ -273,7 +278,7 @@ export default function Home() {
     if (useElevenLabs && selectedVoice) {
       try {
         setIsSpeaking(true);
-        console.log('Starting to speak with Rachel voice from ElevenLabs...');
+        console.log('Starting to speak with ElevenLabs voice...');
         
         const response = await fetch('/api/generate-speech', {
           method: 'POST',
@@ -300,7 +305,7 @@ export default function Home() {
         
         source.onended = () => {
           setIsSpeaking(false);
-          console.log('Finished speaking with Rachel voice');
+          console.log('Finished speaking with ElevenLabs voice');
         };
         
         source.start();
@@ -611,7 +616,7 @@ export default function Home() {
                                 {/* ElevenLabs voices first (higher quality) */}
                                 {elevenLabsVoices.map((voice, index) => (
                                   <SelectItem key={`el-${index}`} value={voice.voice_id}>
-                                    {voice.name} {voice.name === 'Rachel' ? '✝️' : voice.category === 'childlike' ? '⭐' : voice.category === 'faith-based' ? '🙏' : '🎭'}
+                                    {voice.name} {voice.name.toLowerCase() === 'faith' ? '✝️' : voice.name === 'Rachel' ? '🙏' : voice.category === 'childlike' ? '⭐' : voice.category === 'faith-based' ? '✝️' : '🎭'}
                                   </SelectItem>
                                 ))}
                                 
