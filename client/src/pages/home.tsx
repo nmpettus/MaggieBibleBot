@@ -278,12 +278,22 @@ export default function Home() {
     }
   };
 
+  // Keep track of current audio for cleanup
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+
   // Text-to-speech functions with ElevenLabs integration
   const speakText = async (text: string) => {
     // Prevent multiple simultaneous speech requests
     if (isSpeaking) {
       console.log('Already speaking, ignoring request');
       return;
+    }
+    
+    // Stop any current audio
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
     }
     if (useElevenLabs && selectedVoice) {
       try {
@@ -315,17 +325,22 @@ export default function Home() {
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
         
+        // Set as current audio for cleanup
+        setCurrentAudio(audio);
+        
         audio.oncanplaythrough = () => {
           const generationTime = Date.now() - startTime;
           console.log(`🚀 Audio ready in ${generationTime}ms, now playing...`);
           audio.play().catch(error => {
             console.error('Audio play error:', error);
             setIsSpeaking(false);
+            setCurrentAudio(null);
           });
         };
         
         audio.onended = () => {
           setIsSpeaking(false);
+          setCurrentAudio(null);
           const totalTime = Date.now() - startTime;
           console.log(`✅ Faith finished speaking (${totalTime}ms total)`);
           URL.revokeObjectURL(audioUrl); // Clean up memory
@@ -334,6 +349,7 @@ export default function Home() {
         audio.onerror = (error) => {
           console.error('Audio error:', error);
           setIsSpeaking(false);
+          setCurrentAudio(null);
           URL.revokeObjectURL(audioUrl);
         };
         return;
@@ -397,17 +413,32 @@ export default function Home() {
   };
 
   const stopSpeaking = () => {
+    console.log('Stopping speech...');
+    
+    // Stop ElevenLabs audio if playing
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+    }
+    
+    // Stop browser speech synthesis
     if (speechSynthesis) {
       speechSynthesis.cancel();
     }
+    
     setIsSpeaking(false);
   };
 
   const toggleSpeech = () => {
+    console.log('Toggle speech clicked. isSpeaking:', isSpeaking, 'response:', response);
     if (isSpeaking) {
       stopSpeaking();
     } else if (response) {
+      console.log('Speaking response answer:', response.answer?.substring(0, 50) + '...');
       speakText(response.answer);
+    } else {
+      console.log('No response available to speak');
     }
   };
 
