@@ -728,7 +728,7 @@ export default function Home() {
                       onChange={(e) => setQuestion(e.target.value)}
                       rows={4}
                       placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                      className="w-full resize-none bg-white/20 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-lg text-gray-900 placeholder:text-gray-600 focus:bg-white/30 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
+                      className="w-full resize-none bg-white/20 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-xl text-gray-900 placeholder:text-gray-600 focus:bg-white/30 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
                       disabled={askMaggieMutation.isPending}
                     />
                   </div>
