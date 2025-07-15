@@ -103,20 +103,15 @@ export default function Home() {
     onSuccess: (data) => {
       setResponse(data);
       setQuestion(""); // Clear the form
-      setHasSubmitted(false); // Reset submission flag
-      
-      // Clear silence timer on successful submission
-      if (silenceTimer) {
-        clearTimeout(silenceTimer);
-        setSilenceTimer(null);
-      }
+      setTimeout(() => setHasSubmitted(false), 1000); // Reset submission flag after delay
     }
   });
 
-  // Update question when transcript changes and auto-submit after silence
+  // Handle transcript changes and auto-submission
   useEffect(() => {
     console.log('Transcript changed:', transcript, 'Voice mode:', isVoiceMode);
-    if (transcript && isVoiceMode) {
+    
+    if (transcript && isVoiceMode && transcript.length > 5 && !hasSubmitted) {
       console.log('Speech recognized:', transcript);
       setQuestion(transcript);
       
@@ -126,33 +121,34 @@ export default function Home() {
       }
       
       // Start new silence timer - auto-submit after 2 seconds of silence
-      if (transcript.length > 5 && !hasSubmitted) {
-        const timer = setTimeout(() => {
-          if (transcript.trim() && !askMaggieMutation.isPending) {
-            console.log('Auto-submitting after 2 seconds of silence:', transcript);
-            askMaggieMutation.mutate(transcript.trim());
-            setIsVoiceMode(false);
-            setHasSubmitted(true);
-            resetTranscript();
-          }
-        }, 2000); // 2 seconds of silence
-        
-        setSilenceTimer(timer);
-      }
+      const timer = setTimeout(() => {
+        console.log('Auto-submitting after 2 seconds of silence:', transcript);
+        setHasSubmitted(true);
+        askMaggieMutation.mutate(transcript.trim());
+        setIsVoiceMode(false);
+        resetTranscript();
+      }, 2000);
+      
+      setSilenceTimer(timer);
     }
     
-    // Also check if there's a pending transcript when voice mode stops manually
-    if (transcript && !isVoiceMode && transcript.length > 5 && !askMaggieMutation.isPending && !hasSubmitted) {
-      console.log('Submitting question after voice mode ended:', transcript);
+    // Handle when user manually stops voice mode
+    if (transcript && !isVoiceMode && transcript.length > 5 && !hasSubmitted) {
+      console.log('Submitting question after voice mode ended manually:', transcript);
       setHasSubmitted(true);
-      setTimeout(() => {
-        if (transcript.trim() && !askMaggieMutation.isPending) {
-          askMaggieMutation.mutate(transcript.trim());
-          resetTranscript();
-        }
-      }, 500);
+      askMaggieMutation.mutate(transcript.trim());
+      resetTranscript();
     }
-  }, [transcript, isVoiceMode, listening, askMaggieMutation, silenceTimer, hasSubmitted]);
+  }, [transcript, isVoiceMode]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+      }
+    };
+  }, [silenceTimer]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
