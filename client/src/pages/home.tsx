@@ -540,115 +540,143 @@ export default function Home() {
   }, [listening]);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation Header */}
-      <header className="w-full py-4 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={handleGoBack}
-            className="inline-flex items-center text-secondary hover:text-primary transition-colors duration-200 text-sm font-medium p-0 h-auto"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Return to previous page
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+        <div className="absolute inset-0 opacity-40" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}}></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl floating-animation"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl floating-animation" style={{animationDelay: '3s'}}></div>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 px-4 sm:px-6 pb-12">
-        <div className="max-w-4xl mx-auto">
-          
-          {/* Hero Section */}
-          <section className="text-center mb-12">
-            {/* Title with Maggie image */}
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <img 
-                src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
-                alt="Maggie the friendly dog reading a book" 
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
-              />
-              <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
-                Ask Maggie Bible Questions
-              </h1>
-            </div>
+      <div className="relative z-10">
+        {/* Navigation Header */}
+        <header className="w-full py-4 px-4 sm:px-6">
+          <div className="max-w-4xl mx-auto">
+            <Button
+              variant="ghost"
+              onClick={handleGoBack}
+              className="glass-card inline-flex items-center text-white/80 hover:text-white transition-all duration-300 text-sm font-medium p-3 h-auto magic-button"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Return to previous page
+            </Button>
+          </div>
+        </header>
 
-            {/* Explanatory text */}
-            <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
-              Answers are based on the New Testament covenant of Grace and God's Love as taught by Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts.
-            </p>
-          </section>
+        {/* Main Content */}
+        <main className="flex-1 px-4 sm:px-6 pb-12">
+          <div className="max-w-4xl mx-auto">
+            
+            {/* Enhanced Hero Section */}
+            <section className="text-center mb-12">
+              {/* Title with enhanced Maggie image */}
+              <div className="flex items-center justify-center gap-6 mb-8">
+                {/* Enhanced Maggie logo with multiple glow effects */}
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-400 p-1 pulse-glow">
+                    <div className="w-full h-full rounded-full bg-white/20 backdrop-blur-sm"></div>
+                  </div>
+                  <img 
+                    src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
+                    alt="Maggie the friendly dog reading a book" 
+                    className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-2xl floating-animation"
+                  />
+                  {/* Additional glow rings */}
+                  <div className="absolute inset-0 rounded-full border-2 border-white/30 animate-ping" style={{animationDuration: '3s'}}></div>
+                </div>
+                
+                {/* Enhanced title with layered effects */}
+                <div className="relative">
+                  <h1 className="text-5xl sm:text-6xl font-bold gradient-text leading-tight relative z-10">
+                    Ask Maggie Bible Questions
+                  </h1>
+                  <div className="absolute inset-0 text-5xl sm:text-6xl font-bold gradient-text blur-sm opacity-50 leading-tight animate-pulse"></div>
+                </div>
+              </div>
 
-          {/* Question Form */}
+              {/* Enhanced explanatory text with glass card */}
+              <div className="glass-card p-6 max-w-4xl mx-auto">
+                <p className="text-xl text-white/90 leading-relaxed">
+                  Answers are based on the New Testament covenant of Grace and God's Love as taught by 
+                  <span className="font-semibold text-blue-200"> Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts</span>.
+                </p>
+              </div>
+            </section>
+
+          {/* Enhanced Question Form */}
           <section className="mb-12">
             <div className="max-w-2xl mx-auto">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Question input */}
+                {/* Enhanced Question input */}
                 <div className="relative">
-                  <Textarea
-                    id="question"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    rows={4}
-                    placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                    className="w-full resize-none border border-gray-300 rounded-md p-4 pr-12 text-lg shadow-md focus:shadow-lg transition-shadow duration-200"
-                    disabled={askMaggieMutation.isPending}
-                  />
+                  <div className="glass-card p-1">
+                    <Textarea
+                      id="question"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      rows={4}
+                      placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
+                      className="w-full resize-none bg-white/20 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-lg text-white placeholder:text-white/60 focus:bg-white/30 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
+                      disabled={askMaggieMutation.isPending}
+                    />
+                  </div>
                   {browserSupportsSpeechRecognition && (
                     <Button
                       type="button"
                       onClick={listening ? stopListening : startListening}
-                      className={`absolute right-2 top-2 p-2 rounded-full transition-all duration-200 ${
+                      className={`absolute right-3 top-3 p-3 rounded-full transition-all duration-300 magic-button shadow-lg ${
                         listening 
-                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                          : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white animate-pulse pulse-glow' 
+                          : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white'
                       }`}
                       disabled={askMaggieMutation.isPending}
                       title={listening ? "Stop recording" : "Start voice input"}
                     >
                       {listening ? (
-                        <MicOff className="w-4 h-4" />
+                        <MicOff className="w-5 h-5" />
                       ) : (
-                        <Mic className="w-4 h-4" />
+                        <Mic className="w-5 h-5" />
                       )}
                     </Button>
                   )}
                 </div>
                 
-                {/* Voice status */}
+                {/* Enhanced Voice status */}
                 {browserSupportsSpeechRecognition && (
-                  <div className="mt-2 text-sm text-gray-600">
+                  <div className="mt-4 text-sm">
                     {listening ? (
-                      <div className="text-green-600 font-medium">
-                        🎤 Listening... Speak clearly into your microphone
-                        <br />
-                        <span className="text-xs text-gray-500">
+                      <div className="glass-card p-4 text-green-200 font-medium text-center">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                          🎤 Listening... Speak clearly into your microphone
+                        </div>
+                        <span className="text-xs text-white/60">
                           Recording will auto-stop after 30 seconds or click the microphone to stop
                         </span>
                       </div>
                     ) : (
-                      <span className="text-gray-500">
-                        💡 Click the microphone to speak your question aloud
-                      </span>
+                      <div className="glass-card p-3 text-center">
+                        <span className="text-white/80">
+                          💡 Click the microphone to speak your question aloud
+                        </span>
+                      </div>
                     )}
                   </div>
                 )}
                 
-
-                
-                {/* Fallback for unsupported browsers */}
+                {/* Enhanced Fallback for unsupported browsers */}
                 {!browserSupportsSpeechRecognition && (
-                  <div className="mt-2 text-sm text-gray-500">
+                  <div className="glass-card p-4 mt-4 text-sm text-white/70 text-center">
                     Speech recognition not supported in this browser. Please type your question.
                   </div>
                 )}
 
-                {/* Submit button */}
+                {/* Enhanced Submit button */}
                 <div className="flex justify-center">
                   <Button 
                     type="submit"
                     disabled={!question.trim() || askMaggieMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-md"
+                    className="magic-button bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-bold px-12 py-4 rounded-2xl text-lg shadow-2xl"
                   >
                     {askMaggieMutation.isPending ? (
                       <>
@@ -675,35 +703,41 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Response Display */}
+          {/* Enhanced Response Display */}
           {response && (
             <section className="mb-12">
-              <Card className="bg-gradient-to-br from-emerald-50 to-blue-50 shadow-lg border-gray-100">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-start space-x-4">
-                    {/* Maggie's avatar for response */}
-                    <div className="flex-shrink-0">
-                      <img 
-                        src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
-                        alt="Maggie" 
-                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
-                      />
-                    </div>
+              <div className="glass-card p-1">
+                <Card className="bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-lg border-0 shadow-2xl">
+                  <CardContent className="p-6 sm:p-8">
+                    <div className="flex items-start space-x-6">
+                      {/* Enhanced Maggie's avatar for response */}
+                      <div className="flex-shrink-0">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400 to-blue-500 p-1 pulse-glow">
+                            <div className="w-full h-full rounded-full bg-white/20 backdrop-blur-sm"></div>
+                          </div>
+                          <img 
+                            src="https://velvety-lamington-6fd815.netlify.app/MaggieRead.jpeg" 
+                            alt="Maggie" 
+                            className="relative w-16 h-16 rounded-full object-cover border-4 border-white shadow-xl floating-animation"
+                          />
+                        </div>
+                      </div>
                     
                     <div className="flex-1">
-                      {/* Response header */}
-                      <div className="mb-4 flex items-center justify-between">
+                      {/* Enhanced Response header */}
+                      <div className="mb-6 flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-foreground text-lg">Maggie's Biblical Perspective</h3>
-                          <p className="text-muted-foreground text-sm">Based on the New Testament covenant of Grace</p>
+                          <h3 className="font-bold text-white text-2xl mb-2 gradient-text">Maggie's Biblical Perspective</h3>
+                          <p className="text-white/80 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">Based on the New Testament covenant of Grace</p>
                         </div>
                         
-                        {/* Text-to-speech controls */}
+                        {/* Enhanced Text-to-speech controls */}
                         {speechSynthesis && (
-                          <div className="flex items-center gap-2 ml-4 shrink-0">
-                            {/* Voice selector - ElevenLabs + Browser voices */}
+                          <div className="flex items-center gap-3 ml-4 shrink-0">
+                            {/* Enhanced Voice selector */}
                             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                              <SelectTrigger className="w-40 h-8 text-xs">
+                              <SelectTrigger className="glass-card w-48 h-10 text-sm text-white border-0">
                                 <SelectValue placeholder="Select voice" />
                               </SelectTrigger>
                               <SelectContent>
@@ -735,33 +769,37 @@ export default function Home() {
                               </SelectContent>
                             </Select>
                             
-                            {/* Test voice button */}
+                            {/* Enhanced Test voice button */}
                             <Button
                               onClick={testVoice}
                               variant="outline"
                               size="sm"
-                              className="text-xs px-2"
+                              className="magic-button bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 px-4 py-2"
                               disabled={isSpeaking}
                             >
                               Test
                             </Button>
                             
-                            {/* Listen button */}
+                            {/* Enhanced Listen button */}
                             <Button
                               onClick={toggleSpeech}
-                              variant="outline"
                               size="sm"
                               disabled={!response}
+                              className={`magic-button px-6 py-2 font-semibold border-0 ${
+                                isSpeaking 
+                                  ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 pulse-glow'
+                                  : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                              } text-white`}
                             >
                               {isSpeaking ? (
                                 <>
-                                  <VolumeX className="w-4 h-4 mr-2" />
+                                  <VolumeX className="w-5 h-5 mr-2" />
                                   Stop
                                 </>
                               ) : (
                                 <>
-                                  <Volume2 className="w-4 h-4 mr-2" />
-                                  Listen
+                                  <Volume2 className="w-5 h-5 mr-2" />
+                                  Listen ✝️
                                 </>
                               )}
                             </Button>
@@ -827,42 +865,55 @@ export default function Home() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
             </section>
           )}
 
-          {/* Additional Info */}
+          {/* Enhanced Additional Info */}
           <section className="text-center">
-            <Card className="shadow-lg border-gray-100">
-              <CardContent className="p-6 sm:p-8">
-                <h3 className="text-xl font-semibold text-foreground mb-4">About This Ministry Tool</h3>
-                <p className="text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-6">
-                  This AI-powered tool is designed to provide biblical guidance rooted in the New Testament's message of grace and God's unconditional love. 
-                  All responses are crafted with care to reflect sound theological principles.
-                </p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
-                  <div className="text-center">
-                    <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-                      <Book className="w-8 h-8 text-primary" />
-                    </div>
-                    <h4 className="font-semibold text-foreground">Scripture-Based</h4>
-                    <p className="text-muted-foreground text-sm">All answers rooted in biblical truth</p>
-                  </div>
+            <div className="glass-card p-1">
+              <Card className="bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-lg border-0 shadow-2xl">
+                <CardContent className="p-8 sm:p-12">
+                  <h3 className="text-3xl font-bold gradient-text mb-6">About This Ministry Tool</h3>
+                  <p className="text-white/90 leading-relaxed max-w-3xl mx-auto mb-8 text-lg">
+                    This AI-powered tool provides biblical guidance rooted in the New Testament's message of grace and God's unconditional love. 
+                    All responses are crafted with care to reflect sound theological principles, featuring the authentic 
+                    <span className="font-bold text-blue-200"> Faith voice ✝️</span> for spiritual encouragement.
+                  </p>
                   
-                  <div className="text-center">
-                    <div className="bg-emerald-500/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
-                      <Heart className="w-8 h-8 text-emerald-500" />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-12">
+                    <div className="text-center">
+                      <div className="glass-card p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 magic-button">
+                        <Book className="w-10 h-10 text-blue-300" />
+                      </div>
+                      <h4 className="font-bold text-white text-lg mb-2">Scripture-Based</h4>
+                      <p className="text-white/70">All answers rooted in biblical truth</p>
                     </div>
-                    <h4 className="font-semibold text-foreground">Grace-Centered</h4>
-                    <p className="text-muted-foreground text-sm">Focused on God's love and grace</p>
+                    
+                    <div className="text-center">
+                      <div className="glass-card p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 magic-button">
+                        <Heart className="w-10 h-10 text-pink-300" />
+                      </div>
+                      <h4 className="font-bold text-white text-lg mb-2">Grace-Centered</h4>
+                      <p className="text-white/70">Focused on God's love and grace</p>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="glass-card p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 magic-button">
+                        <Volume2 className="w-10 h-10 text-purple-300" />
+                      </div>
+                      <h4 className="font-bold text-white text-lg mb-2">Faith Voice ✝️</h4>
+                      <p className="text-white/70">Authentic audio responses</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </section>
 
         </div>
       </main>
+      </div>
     </div>
   );
 }
