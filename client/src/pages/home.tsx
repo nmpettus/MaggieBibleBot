@@ -42,14 +42,24 @@ export default function Home() {
         console.log('Available audio devices:', audioInputs);
         setAudioDevices(audioInputs);
         
-        // Auto-select AirPods if found
-        const airpods = audioInputs.find(device => 
-          device.label.toLowerCase().includes('airpods') || 
-          device.label.toLowerCase().includes('bluetooth')
+        // Auto-select built-in microphone for better Web Speech API compatibility
+        const builtInMic = audioInputs.find(device => 
+          device.label.toLowerCase().includes('built-in') || 
+          device.label.toLowerCase().includes('macbook')
         );
-        if (airpods) {
-          setSelectedDevice(airpods.deviceId);
-          console.log('Auto-selected AirPods:', airpods.label);
+        if (builtInMic) {
+          setSelectedDevice(builtInMic.deviceId);
+          console.log('Auto-selected built-in microphone for better compatibility:', builtInMic.label);
+        } else {
+          // Fallback to AirPods if built-in not found
+          const airpods = audioInputs.find(device => 
+            device.label.toLowerCase().includes('airpods') || 
+            device.label.toLowerCase().includes('bluetooth')
+          );
+          if (airpods) {
+            setSelectedDevice(airpods.deviceId);
+            console.log('Auto-selected AirPods:', airpods.label);
+          }
         }
       } catch (error) {
         console.error('Error getting audio devices:', error);
@@ -268,16 +278,23 @@ export default function Home() {
                   <div className="mt-2 text-sm text-gray-600">
                     {listening ? (
                       <div className="text-green-600 font-medium">
-                        🎤 Listening... Speak clearly into your AirPods microphone
+                        🎤 Listening... Speak clearly into your microphone
                         <br />
                         <span className="text-xs text-gray-500">
                           Recording will auto-stop after 30 seconds or click the microphone to stop
                         </span>
                       </div>
                     ) : (
-                      <span className="text-gray-500">
-                        💡 Click the microphone to speak your question aloud
-                      </span>
+                      <div className="text-gray-500 space-y-2">
+                        <div>💡 Click the microphone to speak your question aloud</div>
+                        <div className="text-xs bg-yellow-50 p-2 rounded border border-yellow-200">
+                          <strong>AirPods Troubleshooting:</strong>
+                          <br />• Make sure AirPods are connected to your computer (not phone)
+                          <br />• Try switching AirPods input in System Preferences → Sound → Input
+                          <br />• Some browsers work better with built-in microphone for speech recognition
+                          <br />• Consider using your MacBook's built-in microphone instead
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -336,8 +353,9 @@ export default function Home() {
                       <div>Selected device: {selectedDevice ? audioDevices.find(d => d.deviceId === selectedDevice)?.label || 'Unknown' : 'Default'}</div>
                       <div>Mic level: {microphoneLevel}%</div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
-                      💡 Try the "Test Mic" button to check if your AirPods are working
+                    <div className="text-xs text-gray-500 mt-2 space-y-1">
+                      <div>💡 Try the "Test Mic" button to check if your microphone is working</div>
+                      <div>🔧 If AirPods don't work, try selecting "MacBook Pro Microphone (Built-in)" instead</div>
                     </div>
                   </div>
                 )}

@@ -100,5 +100,7 @@ The application is designed to be easily deployable on Replit with automatic env
 - Added blue-to-red gradient text effect on the main heading
 - Updated explanatory text to reference "conservative evangelical pastors and experts"
 - Added soft shadow to question input box with focus enhancement
-- Removed speech recognition feature due to persistent network connectivity issues in browser environment
+- Implemented comprehensive speech recognition system using react-speech-recognition library
+- Added microphone device selection and testing functionality
+- Discovered AirPods compatibility issues with Web Speech API - works better with built-in microphone
 - App is fully functional and stable for biblical Q&A with clean text input interface
