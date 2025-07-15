@@ -25,6 +25,7 @@ export default function Home() {
   const [microphoneLevel, setMicrophoneLevel] = useState(0);
   const [isTestingMic, setIsTestingMic] = useState(false);
   const [browserInfo, setBrowserInfo] = useState<string>("");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   
   // Speech recognition hook
   const {
@@ -101,6 +102,7 @@ export default function Home() {
     onSuccess: (data) => {
       setResponse(data);
       setQuestion(""); // Clear the form
+      setHasSubmitted(false); // Reset submission flag
     }
   });
 
@@ -118,9 +120,22 @@ export default function Home() {
           if (transcript.trim()) {
             askMaggieMutation.mutate(transcript.trim());
             setIsVoiceMode(false); // Exit voice mode after submission
+            resetTranscript(); // Clear transcript after submission
           }
-        }, 1000); // Small delay to ensure user can see the transcription
+        }, 1500); // Slightly longer delay to ensure user can see the transcription
       }
+    }
+    
+    // Also check if there's a pending transcript when voice mode stops
+    if (transcript && !isVoiceMode && transcript.length > 10 && !listening && !askMaggieMutation.isPending && !hasSubmitted) {
+      console.log('Submitting question after voice mode ended:', transcript);
+      setHasSubmitted(true);
+      setTimeout(() => {
+        if (transcript.trim() && !askMaggieMutation.isPending) {
+          askMaggieMutation.mutate(transcript.trim());
+          resetTranscript();
+        }
+      }, 500);
     }
   }, [transcript, isVoiceMode, listening, askMaggieMutation]);
 
@@ -334,68 +349,7 @@ export default function Home() {
                   </div>
                 )}
                 
-                {/* Audio Device Selection */}
-                {browserSupportsSpeechRecognition && audioDevices.length > 1 && (
-                  <div className="mt-2 p-3 bg-blue-50 rounded-md border">
-                    <div className="text-xs text-blue-600 mb-2">Select Microphone:</div>
-                    <div className="flex gap-2">
-                      <select 
-                        value={selectedDevice} 
-                        onChange={(e) => setSelectedDevice(e.target.value)}
-                        className="flex-1 text-sm p-2 border rounded"
-                      >
-                        <option value="">Default microphone</option>
-                        {audioDevices.map(device => (
-                          <option key={device.deviceId} value={device.deviceId}>
-                            {device.label || `Microphone ${device.deviceId.slice(0, 8)}`}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        type="button"
-                        onClick={testMicrophone}
-                        disabled={isTestingMic}
-                        className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1"
-                      >
-                        {isTestingMic ? 'Testing...' : 'Test Mic'}
-                      </Button>
-                    </div>
-                    {isTestingMic && (
-                      <div className="mt-2">
-                        <div className="text-xs text-green-600 mb-1">
-                          Microphone level: {microphoneLevel}% (speak into your AirPods)
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full transition-all duration-100"
-                            style={{width: `${Math.min(microphoneLevel * 2, 100)}%`}}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
 
-                {/* Debug: Show what's being captured */}
-                {browserSupportsSpeechRecognition && (
-                  <div className="mt-2 p-3 bg-gray-100 rounded-md border">
-                    <div className="text-xs text-gray-600 mb-1">Debug Info:</div>
-                    <div className="text-sm space-y-1">
-                      <div>Browser: {browserInfo}</div>
-                      <div>Listening: {listening ? 'YES' : 'NO'}</div>
-                      <div>Voice mode: {isVoiceMode ? 'ON' : 'OFF'}</div>
-                      <div>Transcript: "{transcript || 'None'}"</div>
-                      <div>Transcript length: {transcript ? transcript.length : 0} characters</div>
-                      <div>Selected device: {selectedDevice ? audioDevices.find(d => d.deviceId === selectedDevice)?.label || 'Unknown' : 'Default'}</div>
-                      <div>Mic level: {microphoneLevel}%</div>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 space-y-1">
-                      <div>💡 Try the "Test Mic" button to check if your microphone is working</div>
-                      <div>🔧 If speech recognition doesn't work, try switching to Chrome or Safari</div>
-                      <div>📱 Current browser: {browserInfo}</div>
-                    </div>
-                  </div>
-                )}
                 
                 {/* Fallback for unsupported browsers */}
                 {!browserSupportsSpeechRecognition && (
