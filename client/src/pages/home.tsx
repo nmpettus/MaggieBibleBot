@@ -36,7 +36,7 @@ export default function Home() {
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
   const [useElevenLabs, setUseElevenLabs] = useState<boolean>(true);
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
-  const [highlightTimer, setHighlightTimer] = useState<NodeJS.Timeout | null>(null);
+  const [highlightTimers, setHighlightTimers] = useState<NodeJS.Timeout[]>([]);
   
   // Function to render text with word highlighting
   const renderHighlightedText = (text: string) => {
@@ -47,7 +47,7 @@ export default function Home() {
         key={index}
         className={`${
           currentWordIndex === index
-            ? 'bg-yellow-300 text-black px-1 rounded-sm transition-all duration-300 shadow-lg'
+            ? 'bg-yellow-100 text-gray-800 px-1 rounded-sm transition-all duration-200 shadow-sm border border-yellow-200'
             : ''
         }`}
       >
@@ -358,8 +358,9 @@ export default function Home() {
           audio.play()
             .then(() => {
               console.log('✅ Audio playback started successfully');
-              // Start word highlighting when audio starts
-              startWordHighlighting(text);
+              // Start word highlighting when audio starts with precise duration
+              const audioDuration = audio.duration || undefined;
+              startWordHighlighting(text, audioDuration);
             })
             .catch(error => {
               console.error('Audio play error (trying fallback):', error);
@@ -493,40 +494,76 @@ export default function Home() {
     setIsSpeaking(false);
   };
 
-  // Function to start word highlighting
-  const startWordHighlighting = (text: string) => {
+  // Function to start word highlighting with precise timing
+  const startWordHighlighting = (text: string, audioDuration?: number) => {
     const words = text.split(/\s+/);
-    const averageWordsPerMinute = 150; // Average speech rate
-    const millisecondsPerWord = (60 / averageWordsPerMinute) * 1000;
+    
+    // Calculate more precise timing based on actual audio duration or speech patterns
+    let millisecondsPerWord: number;
+    
+    if (audioDuration) {
+      // Use actual audio duration for precise timing
+      millisecondsPerWord = (audioDuration * 1000) / words.length;
+    } else {
+      // Enhanced timing calculation based on word characteristics
+      const averageWordsPerMinute = 140; // Slightly slower for better comprehension
+      const baseMillisecondsPerWord = (60 / averageWordsPerMinute) * 1000;
+      
+      // Adjust timing based on word length and complexity
+      const avgWordLength = words.reduce((sum, word) => sum + word.length, 0) / words.length;
+      const complexityMultiplier = Math.max(0.8, Math.min(1.3, avgWordLength / 5));
+      
+      millisecondsPerWord = baseMillisecondsPerWord * complexityMultiplier;
+    }
     
     setCurrentWordIndex(0);
     
-    // Clear any existing timer
-    if (highlightTimer) {
-      clearInterval(highlightTimer);
-    }
+    // Clear any existing timers
+    highlightTimers.forEach(timer => clearTimeout(timer));
+    setHighlightTimers([]);
     
-    // Start highlighting words sequentially
-    const timer = setInterval(() => {
-      setCurrentWordIndex((prevIndex) => {
-        const nextIndex = prevIndex + 1;
-        if (nextIndex >= words.length) {
-          clearInterval(timer);
-          setCurrentWordIndex(-1);
-          return -1;
-        }
-        return nextIndex;
-      });
-    }, millisecondsPerWord);
+    // Start highlighting words sequentially with precise timing
+    let currentIndex = 0;
     
-    setHighlightTimer(timer);
+    // Create individual timers for each word based on word-specific timing
+    const newTimers: NodeJS.Timeout[] = [];
+    
+    // Schedule highlighting for each word
+    words.forEach((word, index) => {
+      // Adjust timing based on word characteristics
+      const wordLength = word.length;
+      const isPunctuation = /[.!?,:;]/.test(word);
+      const isShortWord = wordLength <= 3;
+      
+      // Calculate individual word timing
+      let wordMultiplier = 1;
+      if (isPunctuation) wordMultiplier += 0.3; // Pause for punctuation
+      if (isShortWord) wordMultiplier *= 0.8; // Faster for short words
+      if (wordLength > 8) wordMultiplier *= 1.2; // Slower for long words
+      
+      const wordDelay = (millisecondsPerWord * wordMultiplier) * index;
+      
+      const timer = setTimeout(() => {
+        setCurrentWordIndex(index);
+      }, wordDelay);
+      
+      newTimers.push(timer);
+    });
+    
+    // Set overall timer for cleanup
+    const totalDuration = millisecondsPerWord * words.length;
+    const cleanupTimer = setTimeout(() => {
+      setCurrentWordIndex(-1);
+      setHighlightTimers([]);
+    }, totalDuration);
+    
+    newTimers.push(cleanupTimer);
+    setHighlightTimers(newTimers);
   };
 
   const stopWordHighlighting = () => {
-    if (highlightTimer) {
-      clearInterval(highlightTimer);
-      setHighlightTimer(null);
-    }
+    highlightTimers.forEach(timer => clearTimeout(timer));
+    setHighlightTimers([]);
     setCurrentWordIndex(-1);
   };
 
