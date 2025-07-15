@@ -335,16 +335,9 @@ export default function Home() {
                         </span>
                       </div>
                     ) : (
-                      <div className="text-gray-500 space-y-2">
-                        <div>💡 Click the microphone to speak your question aloud</div>
-                        <div className="text-xs bg-yellow-50 p-2 rounded border border-yellow-200">
-                          <strong>AirPods Troubleshooting:</strong>
-                          <br />• Make sure AirPods are connected to your computer (not phone)
-                          <br />• Try switching AirPods input in System Preferences → Sound → Input
-                          <br />• Some browsers work better with built-in microphone for speech recognition
-                          <br />• Consider using your MacBook's built-in microphone instead
-                        </div>
-                      </div>
+                      <span className="text-gray-500">
+                        💡 Click the microphone to speak your question aloud
+                      </span>
                     )}
                   </div>
                 )}
