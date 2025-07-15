@@ -869,41 +869,44 @@ export default function Home() {
             </section>
           )}
 
-          {/* Enhanced Additional Info */}
+          {/* Enhanced Additional Info with Better Visibility */}
           <section className="text-center">
-            <div className="glass-card p-1">
-              <Card className="bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-lg border-0 shadow-2xl">
+            <div className="relative">
+              {/* Dark background with enhanced contrast */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 to-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10"></div>
+              
+              <Card className="relative bg-transparent border-0 shadow-none">
                 <CardContent className="p-8 sm:p-12">
-                  <h3 className="text-3xl font-bold gradient-text mb-6">About This Ministry Tool</h3>
-                  <p className="text-white/90 leading-relaxed max-w-3xl mx-auto mb-8 text-lg">
+                  <h3 className="text-3xl font-bold text-white mb-6 drop-shadow-lg">About This Ministry Tool</h3>
+                  <p className="text-gray-100 leading-relaxed max-w-3xl mx-auto mb-8 text-lg drop-shadow-sm">
                     This AI-powered tool provides biblical guidance rooted in the New Testament's message of grace and God's unconditional love. 
                     All responses are crafted with care to reflect sound theological principles, featuring the authentic 
-                    <span className="font-bold text-blue-200"> Faith voice ✝️</span> for spiritual encouragement.
+                    <span className="font-bold text-blue-300 drop-shadow-sm"> Faith voice ✝️</span> for spiritual encouragement.
                   </p>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-12">
                     <div className="text-center">
-                      <div className="glass-card p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 magic-button">
-                        <Book className="w-10 h-10 text-blue-300" />
+                      <div className="bg-gradient-to-br from-blue-600/90 to-blue-800/90 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-blue-400/30">
+                        <Book className="w-10 h-10 text-blue-100" />
                       </div>
-                      <h4 className="font-bold text-white text-lg mb-2">Scripture-Based</h4>
-                      <p className="text-white/70">All answers rooted in biblical truth</p>
+                      <h4 className="font-bold text-white text-lg mb-2 drop-shadow-sm">Scripture-Based</h4>
+                      <p className="text-gray-200 drop-shadow-sm">All answers rooted in biblical truth</p>
                     </div>
                     
                     <div className="text-center">
-                      <div className="glass-card p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 magic-button">
-                        <Heart className="w-10 h-10 text-pink-300" />
+                      <div className="bg-gradient-to-br from-pink-600/90 to-pink-800/90 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-pink-400/30">
+                        <Heart className="w-10 h-10 text-pink-100" />
                       </div>
-                      <h4 className="font-bold text-white text-lg mb-2">Grace-Centered</h4>
-                      <p className="text-white/70">Focused on God's love and grace</p>
+                      <h4 className="font-bold text-white text-lg mb-2 drop-shadow-sm">Grace-Centered</h4>
+                      <p className="text-gray-200 drop-shadow-sm">Focused on God's love and grace</p>
                     </div>
                     
                     <div className="text-center">
-                      <div className="glass-card p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 magic-button">
-                        <Volume2 className="w-10 h-10 text-purple-300" />
+                      <div className="bg-gradient-to-br from-purple-600/90 to-purple-800/90 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-purple-400/30">
+                        <Volume2 className="w-10 h-10 text-purple-100" />
                       </div>
-                      <h4 className="font-bold text-white text-lg mb-2">Faith Voice ✝️</h4>
-                      <p className="text-white/70">Authentic audio responses</p>
+                      <h4 className="font-bold text-white text-lg mb-2 drop-shadow-sm">Faith Voice ✝️</h4>
+                      <p className="text-gray-200 drop-shadow-sm">Authentic audio responses</p>
                     </div>
                   </div>
                 </CardContent>
