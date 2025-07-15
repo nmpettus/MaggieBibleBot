@@ -72,31 +72,51 @@ export default function Home() {
         console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.gender || 'unknown gender'}`));
         setAvailableVoices(voices);
         
-        // Auto-select a childlike or female voice for Maggie
-        const childlikeVoices = voices.filter(voice => 
-          voice.name.toLowerCase().includes('child') ||
-          voice.name.toLowerCase().includes('kid') ||
-          voice.name.toLowerCase().includes('young') ||
-          voice.name.toLowerCase().includes('girl')
+        // Find the best childlike voices for Maggie
+        const bestChildlikeVoices = voices.filter(voice => 
+          voice.lang.startsWith('en') && (
+            // Specifically look for voices known to be youthful/childlike
+            voice.name.toLowerCase().includes('alice') ||
+            voice.name.toLowerCase().includes('allison') ||
+            voice.name.toLowerCase().includes('ava') ||
+            voice.name.toLowerCase().includes('susan') ||
+            voice.name.toLowerCase().includes('princess') ||
+            voice.name.toLowerCase().includes('victoria') ||
+            voice.name.toLowerCase().includes('zoey') ||
+            voice.name.toLowerCase().includes('zoe') ||
+            voice.name.toLowerCase().includes('child') ||
+            voice.name.toLowerCase().includes('kid') ||
+            voice.name.toLowerCase().includes('young') ||
+            voice.name.toLowerCase().includes('girl')
+          )
         );
         
-        const femaleVoices = voices.filter(voice => 
-          voice.name.toLowerCase().includes('female') ||
-          voice.name.toLowerCase().includes('woman') ||
-          voice.name.toLowerCase().includes('samantha') ||
-          voice.name.toLowerCase().includes('kate') ||
-          voice.name.toLowerCase().includes('anna') ||
-          voice.name.toLowerCase().includes('zoe') ||
-          voice.name.toLowerCase().includes('fiona') ||
-          voice.name.toLowerCase().includes('tessa')
+        const goodFemaleVoices = voices.filter(voice => 
+          voice.lang.startsWith('en') && (
+            voice.name.toLowerCase().includes('samantha') ||
+            voice.name.toLowerCase().includes('anna') ||
+            voice.name.toLowerCase().includes('kate') ||
+            voice.name.toLowerCase().includes('tessa') ||
+            voice.name.toLowerCase().includes('fiona') ||
+            voice.name.toLowerCase().includes('emma') ||
+            voice.name.toLowerCase().includes('olivia') ||
+            voice.name.toLowerCase().includes('sophia')
+          )
         );
         
-        // Prefer childlike voices first, then female voices
-        const preferredVoice = childlikeVoices[0] || femaleVoices[0] || voices.find(v => v.lang.startsWith('en'));
+        // Select the best voice available
+        const preferredVoice = bestChildlikeVoices[0] || goodFemaleVoices[0] || voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('female'));
         
         if (preferredVoice) {
           setSelectedVoice(preferredVoice.name);
           console.log('Auto-selected voice for Maggie:', preferredVoice.name);
+        } else {
+          // Fallback to any English voice
+          const fallback = voices.find(v => v.lang.startsWith('en'));
+          if (fallback) {
+            setSelectedVoice(fallback.name);
+            console.log('Fallback voice selected:', fallback.name);
+          }
         }
       };
       
@@ -283,14 +303,20 @@ export default function Home() {
     let chosenVoice = voices.find(voice => voice.name === selectedVoice);
     
     if (!chosenVoice) {
-      // Fallback: look for childlike or high-pitched voices
+      // Fallback: look for the best childlike voices available
       chosenVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes('child') ||
-        voice.name.toLowerCase().includes('kid') ||
-        voice.name.toLowerCase().includes('young') ||
+        voice.name.toLowerCase().includes('alice') ||
+        voice.name.toLowerCase().includes('allison') ||
+        voice.name.toLowerCase().includes('ava') ||
+        voice.name.toLowerCase().includes('susan') ||
+        voice.name.toLowerCase().includes('zoey') ||
         voice.name.toLowerCase().includes('zoe') ||
+        voice.name.toLowerCase().includes('child') ||
+        voice.name.toLowerCase().includes('young')
+      ) || voices.find(voice => 
+        voice.name.toLowerCase().includes('anna') ||
         voice.name.toLowerCase().includes('tessa') ||
-        voice.name.toLowerCase().includes('anna')
+        voice.name.toLowerCase().includes('samantha')
       ) || voices.find(voice => voice.lang.startsWith('en'));
     }
     
@@ -331,6 +357,12 @@ export default function Home() {
     } else if (response) {
       speakText(response.answer);
     }
+  };
+
+  // Test voice function
+  const testVoice = () => {
+    const testPhrase = "Hi there! I'm Maggie, your friendly biblical guide!";
+    speakText(testPhrase);
   };
 
   const testMicrophone = async () => {
@@ -559,37 +591,49 @@ export default function Home() {
                                 {availableVoices
                                   .filter(voice => voice.lang.startsWith('en')) // English voices only
                                   .sort((a, b) => {
-                                    // Prioritize childlike/female voices
-                                    const aScore = (
-                                      (a.name.toLowerCase().includes('child') ? 100 : 0) +
-                                      (a.name.toLowerCase().includes('young') ? 90 : 0) +
-                                      (a.name.toLowerCase().includes('anna') ? 80 : 0) +
-                                      (a.name.toLowerCase().includes('zoe') ? 80 : 0) +
-                                      (a.name.toLowerCase().includes('tessa') ? 80 : 0) +
-                                      (a.name.toLowerCase().includes('flo') ? 70 : 0) +
-                                      (a.name.toLowerCase().includes('vicki') ? 60 : 0) +
-                                      (a.name.toLowerCase().includes('karen') ? 50 : 0)
-                                    );
-                                    const bScore = (
-                                      (b.name.toLowerCase().includes('child') ? 100 : 0) +
-                                      (b.name.toLowerCase().includes('young') ? 90 : 0) +
-                                      (b.name.toLowerCase().includes('anna') ? 80 : 0) +
-                                      (b.name.toLowerCase().includes('zoe') ? 80 : 0) +
-                                      (b.name.toLowerCase().includes('tessa') ? 80 : 0) +
-                                      (b.name.toLowerCase().includes('flo') ? 70 : 0) +
-                                      (b.name.toLowerCase().includes('vicki') ? 60 : 0) +
-                                      (b.name.toLowerCase().includes('karen') ? 50 : 0)
-                                    );
-                                    return bScore - aScore || a.name.localeCompare(b.name);
+                                    // Prioritize the best childlike voices
+                                    const getVoiceScore = (voice: SpeechSynthesisVoice) => {
+                                      const name = voice.name.toLowerCase();
+                                      if (name.includes('alice') || name.includes('allison') || name.includes('ava')) return 100;
+                                      if (name.includes('susan') || name.includes('zoey') || name.includes('zoe')) return 95;
+                                      if (name.includes('child') || name.includes('young') || name.includes('girl')) return 90;
+                                      if (name.includes('anna') || name.includes('tessa') || name.includes('samantha')) return 85;
+                                      if (name.includes('kate') || name.includes('fiona') || name.includes('emma')) return 80;
+                                      if (name.includes('olivia') || name.includes('sophia') || name.includes('victoria')) return 75;
+                                      if (name.includes('female') || name.includes('woman')) return 70;
+                                      return 0;
+                                    };
+                                    
+                                    return getVoiceScore(b) - getVoiceScore(a) || a.name.localeCompare(b.name);
                                   })
-                                  .map((voice, index) => (
-                                    <SelectItem key={index} value={voice.name}>
-                                      {voice.name} {voice.name.toLowerCase().includes('child') || voice.name.toLowerCase().includes('young') ? '🧒' : 
-                                       voice.name.toLowerCase().includes('anna') || voice.name.toLowerCase().includes('zoe') || voice.name.toLowerCase().includes('tessa') || voice.name.toLowerCase().includes('flo') ? '👧' : ''}
-                                    </SelectItem>
-                                  ))}
+                                  .map((voice, index) => {
+                                    const name = voice.name.toLowerCase();
+                                    const isChildlike = name.includes('alice') || name.includes('allison') || name.includes('ava') || 
+                                                       name.includes('susan') || name.includes('zoey') || name.includes('zoe') ||
+                                                       name.includes('child') || name.includes('young') || name.includes('girl');
+                                    const isFemale = name.includes('anna') || name.includes('tessa') || name.includes('samantha') ||
+                                                    name.includes('kate') || name.includes('fiona') || name.includes('emma') ||
+                                                    name.includes('olivia') || name.includes('sophia');
+                                    
+                                    return (
+                                      <SelectItem key={index} value={voice.name}>
+                                        {voice.name} {isChildlike ? '⭐' : isFemale ? '👧' : ''}
+                                      </SelectItem>
+                                    );
+                                  })}
                               </SelectContent>
                             </Select>
+                            
+                            {/* Test voice button */}
+                            <Button
+                              onClick={testVoice}
+                              variant="outline"
+                              size="sm"
+                              className="text-xs px-2"
+                              disabled={isSpeaking}
+                            >
+                              Test
+                            </Button>
                             
                             {/* Listen button */}
                             <Button
