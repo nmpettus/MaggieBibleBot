@@ -93,14 +93,25 @@ export default function Home() {
     getAudioDevices();
   }, []);
 
-  // Update question when transcript changes
+  // Update question when transcript changes and auto-submit
   useEffect(() => {
     console.log('Transcript changed:', transcript, 'Voice mode:', isVoiceMode);
     if (transcript && isVoiceMode) {
       console.log('Speech recognized:', transcript);
       setQuestion(transcript);
+      
+      // Auto-submit if transcript is long enough and looks like a complete question
+      if (transcript.length > 10 && !listening) {
+        console.log('Auto-submitting transcribed question:', transcript);
+        setTimeout(() => {
+          if (transcript.trim()) {
+            askMaggieMutation.mutate(transcript.trim());
+            setIsVoiceMode(false); // Exit voice mode after submission
+          }
+        }, 1000); // Small delay to ensure user can see the transcription
+      }
     }
-  }, [transcript, isVoiceMode]);
+  }, [transcript, isVoiceMode, listening, askMaggieMutation]);
 
   const askMaggieMutation = useMutation({
     mutationFn: async (questionText: string) => {
