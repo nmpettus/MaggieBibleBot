@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
@@ -28,6 +28,8 @@ export default function Home() {
   const [browserInfo, setBrowserInfo] = useState<string>("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechSynthesis, setSpeechSynthesis] = useState<SpeechSynthesis | null>(null);
   
   // Speech recognition hook
   const {
@@ -37,7 +39,7 @@ export default function Home() {
     browserSupportsSpeechRecognition
   } = useSpeechRecognition();
 
-  // Detect browser
+  // Initialize speech synthesis and detect browser
   useEffect(() => {
     const detectBrowser = () => {
       const userAgent = navigator.userAgent;
@@ -56,7 +58,12 @@ export default function Home() {
       setBrowserInfo(browser);
       console.log('Browser detected:', browser);
     };
-    
+
+    // Initialize speech synthesis
+    if ('speechSynthesis' in window) {
+      setSpeechSynthesis(window.speechSynthesis);
+    }
+
     detectBrowser();
   }, []);
 
@@ -212,6 +219,68 @@ export default function Home() {
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       setSilenceTimer(null);
+    }
+  };
+
+  // Text-to-speech functions
+  const speakText = (text: string) => {
+    if (!speechSynthesis) return;
+    
+    // Stop any current speech
+    speechSynthesis.cancel();
+    
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Configure voice settings
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Find a pleasant female voice if available
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes('female') || 
+      voice.name.toLowerCase().includes('samantha') ||
+      voice.name.toLowerCase().includes('karen') ||
+      voice.name.toLowerCase().includes('kate')
+    );
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    
+    // Event handlers
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      console.log('Starting to speak...');
+    };
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      console.log('Finished speaking');
+    };
+    
+    utterance.onerror = (event) => {
+      setIsSpeaking(false);
+      console.error('Speech error:', event.error);
+    };
+    
+    // Start speaking
+    speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (!speechSynthesis) return;
+    speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  const toggleSpeech = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+    } else if (response) {
+      speakText(response.answer);
     }
   };
 
@@ -423,9 +492,34 @@ export default function Home() {
                     
                     <div className="flex-1">
                       {/* Response header */}
-                      <div className="mb-4">
-                        <h3 className="font-semibold text-foreground text-lg">Maggie's Biblical Perspective</h3>
-                        <p className="text-muted-foreground text-sm">Based on the New Testament covenant of Grace</p>
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-foreground text-lg">Maggie's Biblical Perspective</h3>
+                          <p className="text-muted-foreground text-sm">Based on the New Testament covenant of Grace</p>
+                        </div>
+                        
+                        {/* Text-to-speech button */}
+                        {speechSynthesis && (
+                          <Button
+                            onClick={toggleSpeech}
+                            variant="outline"
+                            size="sm"
+                            className="ml-4 shrink-0"
+                            disabled={!response}
+                          >
+                            {isSpeaking ? (
+                              <>
+                                <VolumeX className="w-4 h-4 mr-2" />
+                                Stop
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 className="w-4 h-4 mr-2" />
+                                Listen
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                       
                       {/* Response content */}
