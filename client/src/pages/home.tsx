@@ -103,6 +103,9 @@ export default function Home() {
     onSuccess: (data) => {
       setResponse(data);
       setQuestion(""); // Clear the form
+      setIsVoiceMode(false); // Ensure voice mode is off
+      SpeechRecognition.stopListening(); // Stop any ongoing recognition
+      resetTranscript(); // Clear transcript
       setTimeout(() => setHasSubmitted(false), 1000); // Reset submission flag after delay
     }
   });
@@ -124,8 +127,9 @@ export default function Home() {
       const timer = setTimeout(() => {
         console.log('Auto-submitting after 2 seconds of silence:', transcript);
         setHasSubmitted(true);
-        askMaggieMutation.mutate(transcript.trim());
         setIsVoiceMode(false);
+        SpeechRecognition.stopListening();
+        askMaggieMutation.mutate(transcript.trim());
         resetTranscript();
       }, 2000);
       
@@ -136,6 +140,7 @@ export default function Home() {
     if (transcript && !isVoiceMode && transcript.length > 5 && !hasSubmitted) {
       console.log('Submitting question after voice mode ended manually:', transcript);
       setHasSubmitted(true);
+      SpeechRecognition.stopListening();
       askMaggieMutation.mutate(transcript.trim());
       resetTranscript();
     }
