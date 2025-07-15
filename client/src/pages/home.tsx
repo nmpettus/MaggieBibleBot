@@ -166,6 +166,13 @@ export default function Home() {
       SpeechRecognition.stopListening(); // Stop any ongoing recognition
       resetTranscript(); // Clear transcript
       setTimeout(() => setHasSubmitted(false), 1000); // Reset submission flag after delay
+      
+      // Auto-speak the answer with Faith voice
+      if (data.answer) {
+        setTimeout(() => {
+          speakText(data.answer);
+        }, 500); // Small delay to ensure everything is set up
+      }
     }
   });
 
@@ -275,10 +282,15 @@ export default function Home() {
 
   // Text-to-speech functions with ElevenLabs integration
   const speakText = async (text: string) => {
+    // Prevent multiple simultaneous speech requests
+    if (isSpeaking) {
+      console.log('Already speaking, ignoring request');
+      return;
+    }
     if (useElevenLabs && selectedVoice) {
       try {
         setIsSpeaking(true);
-        console.log('Starting to speak with ElevenLabs voice...');
+        console.log('Starting to speak with ElevenLabs voice...', text.substring(0, 50));
         
         const response = await fetch('/api/generate-speech', {
           method: 'POST',
