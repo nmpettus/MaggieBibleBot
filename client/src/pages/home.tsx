@@ -818,7 +818,7 @@ export default function Home() {
   // Real-time word highlighting with adaptive timing
   const startWordHighlightingWithRealTime = (text: string, audio: HTMLAudioElement) => {
     const words = text.split(/\s+/);
-    console.log(`🎯 Starting precise highlighting for ${words.length} words, duration: ${audio.duration}s`);
+    console.log(`🎯 Starting lagged highlighting for ${words.length} words, duration: ${audio.duration}s`);
     
     if (!audio.duration || isNaN(audio.duration)) {
       console.log('🎯 No valid duration, falling back to timer-based highlighting');
@@ -868,15 +868,19 @@ export default function Home() {
         const wordStartTime = calculateWordTiming(i);
         const wordEndTime = calculateWordTiming(i + 1);
         
-        if (currentTime >= wordStartTime && currentTime < wordEndTime) {
+        // Add a slight delay (200ms) to make highlighting lag behind speech
+        const delayedTime = currentTime + 0.2;
+        
+        if (delayedTime >= wordStartTime && delayedTime < wordEndTime) {
           targetWordIndex = i;
           break;
         }
       }
       
-      // Fallback to linear timing if calculation doesn't work
+      // Fallback to linear timing with delay if calculation doesn't work
       if (targetWordIndex === -1) {
-        targetWordIndex = Math.floor((currentTime / totalDuration) * words.length);
+        const delayedTime = currentTime + 0.2;
+        targetWordIndex = Math.floor((delayedTime / totalDuration) * words.length);
         targetWordIndex = Math.min(targetWordIndex, words.length - 1);
       }
       
@@ -887,7 +891,7 @@ export default function Home() {
         
         const word = words[targetWordIndex];
         const progressPercentage = (currentTime / totalDuration) * 100;
-        console.log(`🎯 Precise sync: word ${targetWordIndex + 1}/${words.length} "${word}" at ${currentTime.toFixed(2)}s (${progressPercentage.toFixed(1)}%)`);
+        console.log(`🎯 Lagged sync: word ${targetWordIndex + 1}/${words.length} "${word}" at ${currentTime.toFixed(2)}s (${progressPercentage.toFixed(1)}%)`);
       }
     };
     
