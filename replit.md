@@ -1,8 +1,8 @@
-# Maggie's Biblical Guidance Application
+# Maggie's Guidance Application
 
 ## Overview
 
-This is a full-stack web application that provides biblical guidance through an AI-powered assistant named "Maggie." The application allows users to ask biblical questions and receive thoughtful, grace-centered responses based on New Testament teachings, along with relevant scripture references.
+This is a full-stack web application that provides spiritual guidance through an AI-powered assistant named "Maggie." The application allows users to ask questions and receive thoughtful, grace-centered responses based on New Testament teachings, along with relevant scripture references.
 
 ## User Preferences
 
@@ -131,3 +131,4 @@ The application is designed to be easily deployable on Replit with automatic env
 - **IMPROVED: Word highlighting follows Azure Sara's voice with good accuracy**
 - **REALISTIC: Perfect timing sync is challenging due to natural speech variations**
 - App prioritizes Azure Sara child voice with accurate word-by-word highlighting during speech
+- **UPDATED: Removed "Bible" from main title - now simply "Ask Maggie Questions"**
