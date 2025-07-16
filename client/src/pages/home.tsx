@@ -447,54 +447,36 @@ export default function Home() {
         setCurrentAudio(audio);
         setCurrentVoiceInfo(voiceUsed);
         
-        // Multiple strategies for reliable audio playback
-        const tryPlayAudio = async () => {
-          try {
-            // Strategy 1: Direct play (works if user just interacted)
-            await audio.play();
-            console.log(`✅ ${voiceUsed} audio playback started successfully`);
+        // Immediately try to play Azure Jenny audio - Safari allows this since user just clicked
+        console.log(`🎵 Starting ${voiceUsed} playback immediately...`);
+        audio.play()
+          .then(() => {
+            console.log(`✅ ${voiceUsed} audio started successfully!`);
             startWordHighlighting(text, audio.duration);
-            return true;
-          } catch (error) {
-            console.log(`⚠️ Direct play failed for ${voiceUsed}, trying user gesture approach:`, error.message);
+          })
+          .catch(async (error) => {
+            console.log(`⚠️ Immediate ${voiceUsed} play failed: ${error.message}`);
             
-            // Strategy 2: Wait for user gesture if needed
-            if (error.name === 'NotAllowedError') {
-              console.log(`🔄 ${voiceUsed} audio ready but needs user interaction`);
-              // Audio is ready, just needs user gesture - try immediate retry
+            // Wait for audio to be ready and try again
+            audio.addEventListener('canplay', async () => {
               try {
-                await new Promise(resolve => setTimeout(resolve, 100));
                 await audio.play();
-                console.log(`✅ ${voiceUsed} audio started after retry`);
+                console.log(`✅ ${voiceUsed} started after loading`);
                 startWordHighlighting(text, audio.duration);
-                return true;
               } catch (retryError) {
-                console.log(`⚠️ ${voiceUsed} audio retry failed:`, retryError.message);
+                console.error(`❌ ${voiceUsed} failed completely, using browser TTS`);
+                setIsSpeaking(false);
+                setCurrentAudio(null);
+                
+                if (speechSynthesis) {
+                  setIsSpeaking(true);
+                  playBrowserTTS(text);
+                }
               }
-            }
-            return false;
-          }
-        };
+            });
+          });
 
-        audio.oncanplaythrough = async () => {
-          const generationTime = Date.now() - startTime;
-          console.log(`🚀 ${voiceUsed} audio ready in ${generationTime}ms, attempting to play...`);
-          
-          const playSucceeded = await tryPlayAudio();
-          
-          if (!playSucceeded) {
-            console.error(`❌ ${voiceUsed} audio playback failed, falling back to browser TTS`);
-            setIsSpeaking(false);
-            setCurrentAudio(null);
-            
-            // Only fallback to browser TTS if premium audio completely fails
-            if (speechSynthesis) {
-              setIsSpeaking(true);
-              playBrowserTTS(text);
-              console.log('🔄 Fallback to enhanced browser speech synthesis');
-            }
-          }
-        };
+
         
         audio.onended = () => {
           setIsSpeaking(false);
@@ -517,20 +499,9 @@ export default function Home() {
           console.log('Audio loading started...');
         });
 
-        // Preload and start loading immediately
+        // Load the audio data
         audio.preload = 'auto';
         audio.load();
-        
-        // Try to play as soon as sufficient data is loaded
-        audio.addEventListener('loadeddata', async () => {
-          console.log(`${voiceUsed} audio data loaded, trying immediate play...`);
-          if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
-            const immediatePlaySuccess = await tryPlayAudio();
-            if (!immediatePlaySuccess) {
-              console.log(`${voiceUsed} immediate play failed, waiting for canplaythrough`);
-            }
-          }
-        });
         return;
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
