@@ -303,7 +303,8 @@ export default function Home() {
     }
   };
 
-  // Keep track of current audio for cleanup - moved to top with other state
+  // Keep track of current audio and audio URL for cleanup
+  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
 
   // Browser TTS function for fallback
   const playBrowserTTS = (text: string) => {
@@ -460,6 +461,7 @@ export default function Home() {
         
         // Set as current audio for cleanup
         setCurrentAudio(audio);
+        setCurrentAudioUrl(audioUrl);
         setCurrentVoiceInfo(voiceUsed);
         
         // Set up proper event handlers first
@@ -719,20 +721,49 @@ export default function Home() {
   const stopSpeaking = () => {
     console.log('Stopping speech...');
     
-    // Stop ElevenLabs Faith voice audio if playing
+    // Stop Azure Sara or Faith voice audio if playing
     if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
+      try {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        // Remove event listeners to prevent further events
+        currentAudio.onended = null;
+        currentAudio.onerror = null;
+        currentAudio.onloadeddata = null;
+        currentAudio.onloadedmetadata = null;
+        currentAudio.oncanplaythrough = null;
+        console.log('✅ Azure Sara/Faith audio stopped successfully');
+      } catch (error) {
+        console.log('⚠️ Error stopping audio:', error);
+      }
       setCurrentAudio(null);
+    }
+    
+    // Clean up audio URL to prevent memory leaks
+    if (currentAudioUrl) {
+      try {
+        URL.revokeObjectURL(currentAudioUrl);
+        console.log('🧹 Cleaned up audio URL');
+      } catch (error) {
+        console.log('⚠️ Error cleaning audio URL:', error);
+      }
+      setCurrentAudioUrl(null);
     }
     
     // Stop browser speech synthesis
     if (speechSynthesis) {
       speechSynthesis.cancel();
+      console.log('✅ Browser TTS stopped');
     }
     
-    setIsSpeaking(false);
+    // Stop all word highlighting
     stopWordHighlighting();
+    
+    // Reset all speech-related states
+    setIsSpeaking(false);
+    setCurrentVoiceInfo(null);
+    
+    console.log('🛑 All speech stopped successfully');
   };
 
   // Function to start word highlighting with precise timing
@@ -880,9 +911,32 @@ export default function Home() {
   };
 
   const stopWordHighlighting = () => {
-    highlightTimers.forEach(timer => clearTimeout(timer));
+    console.log('🛑 Stopping word highlighting...');
+    
+    // Clear all highlighting timers
+    highlightTimers.forEach(timer => {
+      if (timer) clearTimeout(timer);
+    });
     setHighlightTimers([]);
     setCurrentWordIndex(-1);
+    
+    // Clear any adaptive highlighting intervals
+    if (window.adaptiveHighlightInterval) {
+      clearInterval(window.adaptiveHighlightInterval);
+      window.adaptiveHighlightInterval = null;
+    }
+    
+    // Remove highlighting from all words in the response
+    const responseElement = document.querySelector('[data-response-text]');
+    if (responseElement) {
+      const words = responseElement.querySelectorAll('.highlighted-word');
+      words.forEach(word => {
+        word.classList.remove('text-blue-600', 'font-bold', 'bg-blue-100', 'rounded', 'px-1');
+      });
+      console.log(`🧹 Cleared highlighting from ${words.length} words`);
+    }
+    
+    console.log('✅ Word highlighting stopped completely');
   };
 
   const toggleSpeech = () => {
