@@ -143,4 +143,5 @@ The application is designed to be easily deployable on Replit with automatic env
 - **TIMING: Word highlighting now uses real-time audio sync with word complexity calculations**
 - **VISUAL: Changed highlighting from blue background to clean underline effect for better readability**
 - **STYLE: Word highlighting now uses blue underline with proper offset and thickness**
-- **ADJUSTED: Added 200ms delay to word highlighting to lag slightly behind speech for better synchronization**
+- **IMPROVED: Updated timing algorithm to linear distribution preventing drift during longer responses**
+- **ADJUSTED: Reduced delay to 100ms and fixed timing calculation to maintain sync throughout speech**
