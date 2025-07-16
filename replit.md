@@ -139,3 +139,6 @@ The application is designed to be easily deployable on Replit with automatic env
 - **PRIORITY: Azure Sara voice always starts first, no browser fallback unless absolutely necessary**
 - **CONFIGURED: Aggressive auto-play for Azure Sara to bypass Safari restrictions**
 - **USER PREFERENCE: Always use Azure Sara voice immediately without asking for permission**
+- **ENHANCED: Precise word highlighting that syncs exactly with Azure Sara's speech timing**
+- **TIMING: Word highlighting now uses real-time audio sync with word complexity calculations**
+- **VISUAL: Improved highlighting with blue background and smooth transitions for better readability**

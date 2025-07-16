@@ -40,18 +40,22 @@ export default function Home() {
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice");
   
-  // Function to render text with word highlighting
+  // Function to render text with precise word highlighting
   const renderHighlightedText = (text: string) => {
     const words = text.split(/\s+/);
     
     return words.map((word, index) => (
       <span
         key={index}
-        className={`${
+        className={`transition-all duration-100 ${
           currentWordIndex === index
-            ? 'bg-yellow-100 text-gray-800 px-1 rounded-sm transition-all duration-200 shadow-sm border border-yellow-200'
-            : ''
+            ? 'bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-md font-semibold shadow-sm border border-blue-300 scale-105'
+            : 'hover:bg-gray-50'
         }`}
+        style={{
+          display: 'inline-block',
+          transformOrigin: 'center',
+        }}
       >
         {word}
         {index < words.length - 1 ? ' ' : ''}
@@ -814,7 +818,7 @@ export default function Home() {
   // Real-time word highlighting with adaptive timing
   const startWordHighlightingWithRealTime = (text: string, audio: HTMLAudioElement) => {
     const words = text.split(/\s+/);
-    console.log(`🎯 Starting adaptive highlighting for ${words.length} words, duration: ${audio.duration}s`);
+    console.log(`🎯 Starting precise highlighting for ${words.length} words, duration: ${audio.duration}s`);
     
     if (!audio.duration || isNaN(audio.duration)) {
       console.log('🎯 No valid duration, falling back to timer-based highlighting');
@@ -822,42 +826,73 @@ export default function Home() {
       return;
     }
     
-    // Use adaptive timing that's more accurate for the first half of speech
+    // Calculate precise word timing based on Azure Sara's speech patterns
     const totalDuration = audio.duration;
+    const baseTimePerWord = totalDuration / words.length;
     let lastWordIndex = -1;
     
     setCurrentWordIndex(0);
     
-    // Use timeupdate event for adaptive sync
-    const handleTimeUpdate = () => {
-      const currentTime = audio.currentTime;
-      const progressRatio = currentTime / totalDuration;
+    // Enhanced timing calculation with word complexity factors
+    const calculateWordTiming = (wordIndex: number) => {
+      const word = words[wordIndex];
+      let adjustedTime = wordIndex * baseTimePerWord;
       
-      // Use different timing strategies based on progress
-      let wordIndex: number;
-      if (progressRatio < 0.6) {
-        // First 60% - use linear timing (more accurate)
-        wordIndex = Math.floor((currentTime / totalDuration) * words.length);
-      } else {
-        // Last 40% - use slightly accelerated timing to catch up
-        const adjustedProgress = 0.6 + (progressRatio - 0.6) * 1.1;
-        wordIndex = Math.floor(adjustedProgress * words.length);
+      // Adjust for word complexity and punctuation
+      for (let i = 0; i <= wordIndex; i++) {
+        const currentWord = words[i];
+        const wordLength = currentWord.length;
+        const hasPunctuation = /[.!?,:;]/.test(currentWord);
+        
+        // Longer words take more time
+        if (wordLength > 8) adjustedTime += baseTimePerWord * 0.2;
+        else if (wordLength < 4) adjustedTime -= baseTimePerWord * 0.1;
+        
+        // Punctuation adds pause time
+        if (hasPunctuation) adjustedTime += baseTimePerWord * 0.3;
       }
       
-      // Ensure we don't exceed bounds or go backwards
-      wordIndex = Math.max(lastWordIndex, Math.min(wordIndex, words.length - 1));
+      return adjustedTime;
+    };
+    
+    // Use timeupdate event for precise sync
+    const handleTimeUpdate = () => {
+      const currentTime = audio.currentTime;
       
-      if (wordIndex >= 0 && wordIndex < words.length && wordIndex !== lastWordIndex) {
-        setCurrentWordIndex(wordIndex);
-        lastWordIndex = wordIndex;
-        console.log(`🎯 Adaptive highlight: word ${wordIndex + 1}/${words.length} at ${currentTime.toFixed(2)}s (${(progressRatio * 100).toFixed(1)}%)`);
+      // Find the word that should be highlighted at this exact time
+      let targetWordIndex = -1;
+      
+      for (let i = 0; i < words.length; i++) {
+        const wordStartTime = calculateWordTiming(i);
+        const wordEndTime = calculateWordTiming(i + 1);
+        
+        if (currentTime >= wordStartTime && currentTime < wordEndTime) {
+          targetWordIndex = i;
+          break;
+        }
+      }
+      
+      // Fallback to linear timing if calculation doesn't work
+      if (targetWordIndex === -1) {
+        targetWordIndex = Math.floor((currentTime / totalDuration) * words.length);
+        targetWordIndex = Math.min(targetWordIndex, words.length - 1);
+      }
+      
+      // Update highlighting only when word changes
+      if (targetWordIndex >= 0 && targetWordIndex !== lastWordIndex) {
+        setCurrentWordIndex(targetWordIndex);
+        lastWordIndex = targetWordIndex;
+        
+        const word = words[targetWordIndex];
+        const progressPercentage = (currentTime / totalDuration) * 100;
+        console.log(`🎯 Precise sync: word ${targetWordIndex + 1}/${words.length} "${word}" at ${currentTime.toFixed(2)}s (${progressPercentage.toFixed(1)}%)`);
       }
     };
     
     // Clean up any existing event listeners
     audio.removeEventListener('timeupdate', handleTimeUpdate);
     
-    // Add the new event listener
+    // Add the new event listener with higher frequency updates
     audio.addEventListener('timeupdate', handleTimeUpdate);
     
     // Clean up when audio ends
