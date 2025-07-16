@@ -432,17 +432,26 @@ export default function Home() {
         return;
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
-        setIsSpeaking(false);
         
-        // Faith voice failed - use enhanced free TTS as fallback
-        if (error.message === 'QUOTA_EXCEEDED') {
-          console.log('⚠️ Faith voice quota exceeded - switching to enhanced free TTS');
-        } else if (error.message === 'FAITH_VOICE_ERROR') {
-          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable - switching to enhanced free TTS');
+        // Check if this is actually Azure TTS working (status 500 with fallback message)
+        if (error.message && error.message.includes('temporarily unavailable')) {
+          console.log('ElevenLabs technical issue, using browser speech:', error.message);
+          setCurrentVoiceInfo("Azure Jenny");
+          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable - switching to Azure TTS');
+          // Continue to browser TTS fallback below (Azure audio will play via API)
         } else {
-          console.log('⚠️ ElevenLabs service unavailable - switching to enhanced free TTS');
+          setIsSpeaking(false);
+          
+          // Faith voice failed - use enhanced free TTS as fallback
+          if (error.message === 'QUOTA_EXCEEDED') {
+            console.log('⚠️ Faith voice quota exceeded - switching to enhanced free TTS');
+          } else if (error.message === 'FAITH_VOICE_ERROR') {
+            console.log('⚠️ ElevenLabs Faith voice temporarily unavailable - switching to enhanced free TTS');
+          } else {
+            console.log('⚠️ ElevenLabs service unavailable - switching to enhanced free TTS');
+          }
+          // Continue to enhanced free TTS fallback below
         }
-        // Continue to enhanced free TTS fallback below
       }
     }
 

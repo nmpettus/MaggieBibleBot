@@ -5,6 +5,7 @@ import { insertQuestionSchema } from "@shared/schema";
 import { askMaggieBibleQuestion } from "./services/openai";
 import { generateSpeechElevenLabs, getAvailableVoices, CARTOON_VOICES } from "./services/elevenlabs";
 import { generateSpeechGoogleTTS, getGoogleTTSVoices } from "./services/googleTTS";
+import { generateSpeechAzureTTS, getAzureTTSVoices } from "./services/azureTTS";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Ask Maggie a Bible question
@@ -83,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate speech with ElevenLabs Faith voice and Google TTS fallback
+  // Generate speech with ElevenLabs Faith voice and Azure TTS fallback
   app.post("/api/generate-speech", async (req, res) => {
     try {
       const { text, voiceId } = req.body;
@@ -112,27 +113,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (elevenLabsError) {
         console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
         
-        // If ElevenLabs fails, try Google TTS as premium fallback
+        // If ElevenLabs fails, try Azure TTS as premium fallback
         try {
-          console.log(`🔊 Falling back to Google TTS natural child voice`);
+          console.log(`🔊 Falling back to Azure TTS natural child voice`);
           
-          const googleAudioBuffer = await generateSpeechGoogleTTS(text, 'en-US-Journey-F');
+          const azureAudioBuffer = await generateSpeechAzureTTS(text, 'en-US-JennyNeural');
           
           // Set appropriate headers for audio response
           res.set({
             'Content-Type': 'audio/mpeg',
-            'Content-Length': googleAudioBuffer.byteLength.toString(),
+            'Content-Length': azureAudioBuffer.byteLength.toString(),
             'Cache-Control': 'public, max-age=3600'
           });
           
-          console.log(`✅ Google TTS succeeded: ${googleAudioBuffer.byteLength} bytes`);
-          return res.send(googleAudioBuffer);
+          console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
+          return res.send(azureAudioBuffer);
           
-        } catch (googleError) {
-          console.log(`⚠️ Google TTS also failed: ${googleError.message}`);
+        } catch (azureError) {
+          console.log(`⚠️ Azure TTS also failed: ${azureError.message}`);
           
           // Both premium services failed - return error
-          throw new Error(`Both premium TTS services failed: ${elevenLabsError.message}, ${googleError.message}`);
+          throw new Error(`Both premium TTS services failed: ${elevenLabsError.message}, ${azureError.message}`);
         }
       }
       
@@ -145,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Faith voice quota exceeded. Using enhanced browser voice.",
           quotaExceeded: true
         });
-      } else if (error.message === 'GOOGLE_AUTH_ERROR') {
+      } else if (error.message === 'AZURE_AUTH_ERROR') {
         res.status(500).json({ 
           message: "Premium voice services need setup. Using enhanced browser voice.",
           fallback: true 
@@ -159,10 +160,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get Google TTS voices
-  app.get("/api/google-voices", async (req, res) => {
+  // Get Azure TTS voices
+  app.get("/api/azure-voices", async (req, res) => {
     try {
-      const voices = await getGoogleTTSVoices();
+      const voices = await getAzureTTSVoices();
       res.json({ voices });
     } catch (error) {
       console.error("Error fetching Google TTS voices:", error);
