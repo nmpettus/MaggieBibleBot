@@ -447,33 +447,49 @@ export default function Home() {
         setCurrentAudio(audio);
         setCurrentVoiceInfo(voiceUsed);
         
-        // Immediately try to play Azure Jenny audio - Safari allows this since user just clicked
-        console.log(`🎵 Starting ${voiceUsed} playback immediately...`);
+        // Set up proper event handlers first
+        audio.onloadedmetadata = () => {
+          console.log(`🎵 ${voiceUsed} metadata loaded, duration: ${audio.duration}s`);
+        };
+        
+        audio.oncanplaythrough = async () => {
+          console.log(`🎵 ${voiceUsed} can play through, starting playback...`);
+          try {
+            await audio.play();
+            console.log(`✅ ${voiceUsed} audio started successfully! Duration: ${audio.duration}s`);
+            // Start highlighting with actual audio duration
+            startWordHighlighting(text, audio.duration);
+          } catch (error) {
+            console.error(`❌ ${voiceUsed} playback failed:`, error);
+            setIsSpeaking(false);
+            setCurrentAudio(null);
+            
+            if (speechSynthesis) {
+              setIsSpeaking(true);
+              playBrowserTTS(text);
+            }
+          }
+        };
+        
+        // Try immediate play if already ready (Safari user gesture requirement)
+        console.log(`🎵 Starting ${voiceUsed} playback with user gesture...`);
         audio.play()
           .then(() => {
-            console.log(`✅ ${voiceUsed} audio started successfully!`);
-            startWordHighlighting(text, audio.duration);
-          })
-          .catch(async (error) => {
-            console.log(`⚠️ Immediate ${voiceUsed} play failed: ${error.message}`);
-            
-            // Wait for audio to be ready and try again
-            audio.addEventListener('canplay', async () => {
-              try {
-                await audio.play();
-                console.log(`✅ ${voiceUsed} started after loading`);
+            console.log(`✅ ${voiceUsed} immediate play successful!`);
+            // Check if duration is available, if not wait for metadata
+            if (audio.duration && !isNaN(audio.duration)) {
+              console.log(`Duration available: ${audio.duration}s`);
+              startWordHighlighting(text, audio.duration);
+            } else {
+              console.log(`Waiting for metadata to get duration...`);
+              audio.addEventListener('loadedmetadata', () => {
+                console.log(`Metadata loaded, duration: ${audio.duration}s, starting highlighting`);
                 startWordHighlighting(text, audio.duration);
-              } catch (retryError) {
-                console.error(`❌ ${voiceUsed} failed completely, using browser TTS`);
-                setIsSpeaking(false);
-                setCurrentAudio(null);
-                
-                if (speechSynthesis) {
-                  setIsSpeaking(true);
-                  playBrowserTTS(text);
-                }
-              }
-            });
+              });
+            }
+          })
+          .catch((error) => {
+            console.log(`⚠️ Immediate play failed, waiting for canplaythrough: ${error.message}`);
           });
 
 
@@ -630,16 +646,18 @@ export default function Home() {
   // Function to start word highlighting with precise timing
   const startWordHighlighting = (text: string, audioDuration?: number) => {
     const words = text.split(/\s+/);
+    console.log(`🎯 Starting word highlighting for ${words.length} words, audio duration: ${audioDuration}s`);
     
     // Calculate more precise timing based on actual audio duration or speech patterns
     let millisecondsPerWord: number;
     
-    if (audioDuration) {
+    if (audioDuration && !isNaN(audioDuration) && audioDuration > 0) {
       // Use actual audio duration for precise timing
       millisecondsPerWord = (audioDuration * 1000) / words.length;
+      console.log(`🎯 Using actual duration: ${millisecondsPerWord}ms per word`);
     } else {
-      // Enhanced timing calculation based on word characteristics
-      const averageWordsPerMinute = 140; // Slightly slower for better comprehension
+      // Enhanced timing for Azure TTS voices (they speak faster than browser TTS)
+      const averageWordsPerMinute = 160; // Azure voices are typically faster
       const baseMillisecondsPerWord = (60 / averageWordsPerMinute) * 1000;
       
       // Adjust timing based on word length and complexity
@@ -647,6 +665,7 @@ export default function Home() {
       const complexityMultiplier = Math.max(0.8, Math.min(1.3, avgWordLength / 5));
       
       millisecondsPerWord = baseMillisecondsPerWord * complexityMultiplier;
+      console.log(`🎯 Using estimated timing: ${millisecondsPerWord}ms per word`);
     }
     
     setCurrentWordIndex(0);
@@ -661,7 +680,8 @@ export default function Home() {
     // Create individual timers for each word based on word-specific timing
     const newTimers: NodeJS.Timeout[] = [];
     
-    // Schedule highlighting for each word
+    // Schedule highlighting for each word with cumulative timing
+    let cumulativeDelay = 0;
     words.forEach((word, index) => {
       // Adjust timing based on word characteristics
       const wordLength = word.length;
@@ -670,21 +690,23 @@ export default function Home() {
       
       // Calculate individual word timing
       let wordMultiplier = 1;
-      if (isPunctuation) wordMultiplier += 0.3; // Pause for punctuation
-      if (isShortWord) wordMultiplier *= 0.8; // Faster for short words
-      if (wordLength > 8) wordMultiplier *= 1.2; // Slower for long words
+      if (isPunctuation) wordMultiplier += 0.4; // Longer pause for punctuation
+      if (isShortWord) wordMultiplier *= 0.7; // Faster for short words
+      if (wordLength > 8) wordMultiplier *= 1.3; // Slower for long words
       
-      const wordDelay = (millisecondsPerWord * wordMultiplier) * index;
+      const wordDuration = millisecondsPerWord * wordMultiplier;
+      cumulativeDelay += wordDuration;
       
       const timer = setTimeout(() => {
         setCurrentWordIndex(index);
-      }, wordDelay);
+        console.log(`🎯 Highlighting word ${index + 1}/${words.length}: "${word}" at ${cumulativeDelay}ms`);
+      }, cumulativeDelay);
       
       newTimers.push(timer);
     });
     
-    // Set overall timer for cleanup
-    const totalDuration = millisecondsPerWord * words.length;
+    // Set overall timer for cleanup using the final cumulative delay
+    const totalDuration = cumulativeDelay + 500; // Add small buffer
     const cleanupTimer = setTimeout(() => {
       setCurrentWordIndex(-1);
       setHighlightTimers([]);
