@@ -461,36 +461,50 @@ export default function Home() {
             startWordHighlightingWithRealTime(text, audio);
           } catch (error) {
             console.error(`❌ ${voiceUsed} playback failed:`, error);
-            setIsSpeaking(false);
-            setCurrentAudio(null);
-            
-            if (speechSynthesis) {
-              setIsSpeaking(true);
-              playBrowserTTS(text);
-            }
+            console.log(`🔄 Retrying ${voiceUsed} playback after user interaction...`);
+            // Try again after a brief delay - sometimes Safari needs this
+            setTimeout(async () => {
+              try {
+                await audio.play();
+                console.log(`✅ ${voiceUsed} retry successful!`);
+                startWordHighlightingWithRealTime(text, audio);
+              } catch (retryError) {
+                console.log(`⚠️ ${voiceUsed} retry failed, using browser fallback`);
+                setIsSpeaking(false);
+                setCurrentAudio(null);
+                if (speechSynthesis) {
+                  setIsSpeaking(true);
+                  playBrowserTTS(text);
+                }
+              }
+            }, 100);
           }
         };
         
         // Try immediate play if already ready (Safari user gesture requirement)
         console.log(`🎵 Starting ${voiceUsed} playback with user gesture...`);
-        audio.play()
-          .then(() => {
-            console.log(`✅ ${voiceUsed} immediate play successful!`);
-            // Check if duration is available, if not wait for metadata
-            if (audio.duration && !isNaN(audio.duration)) {
-              console.log(`Duration available: ${audio.duration}s`);
-              startWordHighlightingWithRealTime(text, audio);
-            } else {
-              console.log(`Waiting for metadata to get duration...`);
-              audio.addEventListener('loadedmetadata', () => {
-                console.log(`Metadata loaded, duration: ${audio.duration}s, starting highlighting`);
+        
+        // Add a small delay to ensure audio is fully loaded
+        setTimeout(() => {
+          audio.play()
+            .then(() => {
+              console.log(`✅ ${voiceUsed} immediate play successful!`);
+              // Check if duration is available, if not wait for metadata
+              if (audio.duration && !isNaN(audio.duration)) {
+                console.log(`Duration available: ${audio.duration}s`);
                 startWordHighlightingWithRealTime(text, audio);
-              });
-            }
-          })
-          .catch((error) => {
-            console.log(`⚠️ Immediate play failed, waiting for canplaythrough: ${error.message}`);
-          });
+              } else {
+                console.log(`Waiting for metadata to get duration...`);
+                audio.addEventListener('loadedmetadata', () => {
+                  console.log(`Metadata loaded, duration: ${audio.duration}s, starting highlighting`);
+                  startWordHighlightingWithRealTime(text, audio);
+                });
+              }
+            })
+            .catch((error) => {
+              console.log(`⚠️ Immediate play failed, waiting for canplaythrough: ${error.message}`);
+            });
+        }, 50);
 
 
         

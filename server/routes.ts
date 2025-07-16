@@ -158,8 +158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`🔊 Falling back to Azure TTS genuine child voice`);
           
-          // Allow voice switching via environment variable (default: Jenny)
-          const azureVoice = process.env.AZURE_VOICE || 'en-US-JennyNeural';
+          // Allow voice switching via environment variable (default: Sara)
+          const azureVoice = process.env.AZURE_VOICE || 'en-US-SaraNeural';
           const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
           
           // Extract voice name for display
@@ -167,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                            azureVoice.includes('Aria') ? 'Aria' :
                            azureVoice.includes('Ana') ? 'Ana' :
                            azureVoice.includes('Emma') ? 'Emma' :
-                           azureVoice.includes('Jenny') ? 'Jenny' : 'Jenny';
+                           azureVoice.includes('Jenny') ? 'Jenny' : 'Sara';
           
           console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
           
