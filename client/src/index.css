@@ -63,6 +63,9 @@
 @layer components {
   .gradient-text {
     @apply bg-gradient-to-r from-blue-600 via-purple-600 to-red-500 bg-clip-text text-transparent;
+    line-height: 1.2;
+    padding-bottom: 0.1em;
+    display: inline-block;
   }
   
   .glass-card {

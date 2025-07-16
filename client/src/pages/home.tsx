@@ -915,10 +915,10 @@ export default function Home() {
                 
                 {/* Enhanced title with layered effects */}
                 <div className="relative">
-                  <h1 className="text-5xl sm:text-6xl font-bold gradient-text leading-tight relative z-10">
+                  <h1 className="text-5xl sm:text-6xl font-bold gradient-text leading-relaxed relative z-10 py-2">
                     Ask Maggie Questions
                   </h1>
-                  <div className="absolute inset-0 text-5xl sm:text-6xl font-bold gradient-text blur-sm opacity-50 leading-tight animate-pulse">Ask Maggie Questions</div>
+                  <div className="absolute inset-0 text-5xl sm:text-6xl font-bold gradient-text blur-sm opacity-50 leading-relaxed animate-pulse py-2">Ask Maggie Questions</div>
                 </div>
               </div>
 
