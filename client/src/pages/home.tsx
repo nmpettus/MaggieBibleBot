@@ -818,7 +818,7 @@ export default function Home() {
   // Real-time word highlighting with adaptive timing
   const startWordHighlightingWithRealTime = (text: string, audio: HTMLAudioElement) => {
     const words = text.split(/\s+/);
-    console.log(`🎯 Starting linear highlighting for ${words.length} words, duration: ${audio.duration}s`);
+    console.log(`🎯 Starting natural highlighting for ${words.length} words, duration: ${audio.duration}s`);
     
     if (!audio.duration || isNaN(audio.duration)) {
       console.log('🎯 No valid duration, falling back to timer-based highlighting');
@@ -833,27 +833,25 @@ export default function Home() {
     
     setCurrentWordIndex(0);
     
-    // Enhanced timing calculation that maintains sync throughout
+    // Simplified timing that closely matches Azure Sara's natural pace
     const calculateWordTiming = (wordIndex: number) => {
-      // Use linear distribution to prevent drift
-      const linearTime = (wordIndex / words.length) * totalDuration;
+      // Pure linear distribution with minimal adjustments
+      const baseTime = (wordIndex / words.length) * totalDuration;
       
-      // Add small, non-compounding adjustments
-      let adjustment = 0;
+      // Azure Sara speaks at a fairly consistent pace, so minimal adjustments
       const word = words[wordIndex];
+      let adjustment = 0;
       
       if (word) {
-        const wordLength = word.length;
-        const hasPunctuation = /[.!?,:;]/.test(word);
-        
-        // Small adjustments that don't accumulate errors
-        if (wordLength > 8) adjustment += 0.1;
-        else if (wordLength < 4) adjustment -= 0.05;
-        
-        if (hasPunctuation) adjustment += 0.15;
+        // Only adjust for significant punctuation pauses
+        if (/[.!?]/.test(word)) {
+          adjustment += 0.3; // Sentence endings have longer pauses
+        } else if (/[,:;]/.test(word)) {
+          adjustment += 0.1; // Shorter pauses for commas
+        }
       }
       
-      return linearTime + adjustment;
+      return baseTime + adjustment;
     };
     
     // Use timeupdate event for precise sync
@@ -867,8 +865,8 @@ export default function Home() {
         const wordStartTime = calculateWordTiming(i);
         const wordEndTime = calculateWordTiming(i + 1);
         
-        // Add a shorter delay (100ms) to make highlighting lag behind speech
-        const delayedTime = currentTime + 0.1;
+        // Use current time with minimal delay to stay closer to actual speech
+        const delayedTime = currentTime + 0.05;
         
         if (delayedTime >= wordStartTime && delayedTime < wordEndTime) {
           targetWordIndex = i;
@@ -876,9 +874,9 @@ export default function Home() {
         }
       }
       
-      // Fallback to linear timing with delay if calculation doesn't work
+      // Fallback to pure linear timing if calculation doesn't work
       if (targetWordIndex === -1) {
-        const delayedTime = currentTime + 0.1;
+        const delayedTime = currentTime + 0.05;
         targetWordIndex = Math.floor((delayedTime / totalDuration) * words.length);
         targetWordIndex = Math.min(targetWordIndex, words.length - 1);
       }
@@ -890,7 +888,7 @@ export default function Home() {
         
         const word = words[targetWordIndex];
         const progressPercentage = (currentTime / totalDuration) * 100;
-        console.log(`🎯 Linear sync: word ${targetWordIndex + 1}/${words.length} "${word}" at ${currentTime.toFixed(2)}s (${progressPercentage.toFixed(1)}%)`);
+        console.log(`🎯 Natural sync: word ${targetWordIndex + 1}/${words.length} "${word}" at ${currentTime.toFixed(2)}s (${progressPercentage.toFixed(1)}%)`);
       }
     };
     
