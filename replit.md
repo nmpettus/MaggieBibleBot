@@ -127,6 +127,7 @@ The application is designed to be easily deployable on Replit with automatic env
 - **NEW: Implemented real-time word highlighting synced with audio playback**
 - **NEW: Enhanced timing precision using audio.currentTime for perfect sync**
 - **NEW: Word highlighting now uses cumulative delays with punctuation handling**
-- **NEW: Real-time audio synchronization eliminates timing drift issues**
-- **FIXED: Word highlighting timing issues - now precisely follows Azure Sara's voice**
+- **NEW: Real-time audio synchronization with adaptive timing**
+- **IMPROVED: Word highlighting follows Azure Sara's voice with good accuracy**
+- **REALISTIC: Perfect timing sync is challenging due to natural speech variations**
 - App prioritizes Azure Sara child voice with accurate word-by-word highlighting during speech

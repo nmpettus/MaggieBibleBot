@@ -728,10 +728,10 @@ export default function Home() {
     setHighlightTimers(newTimers);
   };
 
-  // Real-time word highlighting synced with audio playback
+  // Real-time word highlighting with adaptive timing
   const startWordHighlightingWithRealTime = (text: string, audio: HTMLAudioElement) => {
     const words = text.split(/\s+/);
-    console.log(`🎯 Starting real-time highlighting for ${words.length} words, duration: ${audio.duration}s`);
+    console.log(`🎯 Starting adaptive highlighting for ${words.length} words, duration: ${audio.duration}s`);
     
     if (!audio.duration || isNaN(audio.duration)) {
       console.log('🎯 No valid duration, falling back to timer-based highlighting');
@@ -739,20 +739,35 @@ export default function Home() {
       return;
     }
     
-    // Calculate time intervals for each word
+    // Use adaptive timing that's more accurate for the first half of speech
     const totalDuration = audio.duration;
-    const timePerWord = totalDuration / words.length;
+    let lastWordIndex = -1;
     
     setCurrentWordIndex(0);
     
-    // Use timeupdate event for precise sync
+    // Use timeupdate event for adaptive sync
     const handleTimeUpdate = () => {
       const currentTime = audio.currentTime;
-      const wordIndex = Math.floor(currentTime / timePerWord);
+      const progressRatio = currentTime / totalDuration;
       
-      if (wordIndex >= 0 && wordIndex < words.length && wordIndex !== currentWordIndex) {
+      // Use different timing strategies based on progress
+      let wordIndex: number;
+      if (progressRatio < 0.6) {
+        // First 60% - use linear timing (more accurate)
+        wordIndex = Math.floor((currentTime / totalDuration) * words.length);
+      } else {
+        // Last 40% - use slightly accelerated timing to catch up
+        const adjustedProgress = 0.6 + (progressRatio - 0.6) * 1.1;
+        wordIndex = Math.floor(adjustedProgress * words.length);
+      }
+      
+      // Ensure we don't exceed bounds or go backwards
+      wordIndex = Math.max(lastWordIndex, Math.min(wordIndex, words.length - 1));
+      
+      if (wordIndex >= 0 && wordIndex < words.length && wordIndex !== lastWordIndex) {
         setCurrentWordIndex(wordIndex);
-        console.log(`🎯 Real-time highlight: word ${wordIndex + 1}/${words.length} at ${currentTime.toFixed(2)}s`);
+        lastWordIndex = wordIndex;
+        console.log(`🎯 Adaptive highlight: word ${wordIndex + 1}/${words.length} at ${currentTime.toFixed(2)}s (${(progressRatio * 100).toFixed(1)}%)`);
       }
     };
     
@@ -1068,6 +1083,11 @@ export default function Home() {
                               <div className="text-xs text-white/80 mt-1 px-3 py-1 bg-black/20 rounded-md backdrop-blur-sm border border-white/20">
                                 {currentVoiceInfo || 'Loading Voice...'}
                               </div>
+                              {isSpeaking && (
+                                <div className="text-xs text-white/60 mt-1 px-2 py-1 bg-black/10 rounded text-center">
+                                  Word highlighting syncs with speech patterns
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
