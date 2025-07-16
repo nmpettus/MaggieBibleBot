@@ -305,6 +305,80 @@ export default function Home() {
 
   // Keep track of current audio for cleanup - moved to top with other state
 
+  // Browser TTS function for fallback
+  const playBrowserTTS = (text: string) => {
+    if (!speechSynthesis) {
+      console.log('⚠️ Speech synthesis not available in this browser');
+      setIsSpeaking(false);
+      return;
+    }
+    
+    // Stop any current speech
+    speechSynthesis.cancel();
+    
+    // Create utterance with child-optimized settings
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Clear, natural female voice optimization settings
+    utterance.rate = 0.85;
+    utterance.pitch = 1.2;
+    utterance.volume = 1.0;
+    
+    // Find the best child-like voice
+    const voices = speechSynthesis.getVoices();
+    
+    // Priority order for clear, natural female voices
+    const clearFemaleVoices = [
+      'samantha', 'karen', 'vicki', 'kathy', 'shelley', 'flo', 'sandy',
+      'moira', 'tessa', 'anna', 'sara', 'zuzana', 'melina', 'daria'
+    ];
+    
+    let chosenVoice = null;
+    
+    // Try to find the most clear and understandable female voice
+    for (const pattern of clearFemaleVoices) {
+      chosenVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes(pattern) && 
+        voice.lang.startsWith('en')
+      );
+      if (chosenVoice) break;
+    }
+    
+    // Fallback to any English voice if no female voice found
+    if (!chosenVoice) {
+      chosenVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+    }
+    
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
+      const voiceDisplayName = chosenVoice.name.replace(/\s*\([^)]*\)/g, '');
+      setCurrentVoiceInfo(voiceDisplayName);
+      console.log('Using browser voice:', chosenVoice.name);
+    }
+    
+    // Event handlers
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      console.log('Browser TTS started speaking...');
+      startWordHighlighting(text);
+    };
+    
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      stopWordHighlighting();
+      console.log('Browser TTS finished speaking');
+    };
+    
+    utterance.onerror = (error) => {
+      console.error('Browser TTS error:', error);
+      setIsSpeaking(false);
+      stopWordHighlighting();
+    };
+    
+    // Speak the text
+    speechSynthesis.speak(utterance);
+  };
+
   // Text-to-speech functions with ElevenLabs integration
   const speakText = async (text: string) => {
     // Prevent multiple simultaneous speech requests
