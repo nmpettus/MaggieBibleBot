@@ -121,16 +121,16 @@ The application is designed to be easily deployable on Replit with automatic env
 - **FIXED: Removed all browser voice fallbacks - app exclusively uses Faith voice or remains silent**
 - **UPDATED: Added user-visible alerts when Faith voice is unavailable due to quota or technical issues**
 - **ENHANCED: Improved quota detection in ElevenLabs service to catch various error formats**
-- **CURRENT STATUS: Azure Aria (Young voice) active as primary TTS - clear, natural sound**
-- **NEW: Switched from Azure Sara to Azure Aria for preferred user voice**
+- **CURRENT STATUS: Azure Jenny (default voice) active as primary TTS - warm, friendly sound**
+- **NEW: Reverted back to Azure Jenny as default with option to switch to Aria**
 - **NEW: Added environment variable support for voice switching (AZURE_VOICE)**
 - **NEW: Implemented real-time word highlighting synced with audio playback**
 - **NEW: Enhanced timing precision using audio.currentTime for perfect sync**
 - **NEW: Word highlighting now uses cumulative delays with punctuation handling**
 - **NEW: Real-time audio synchronization with adaptive timing**
-- **IMPROVED: Word highlighting follows Azure Aria's voice with good accuracy**
+- **IMPROVED: Word highlighting follows Azure Jenny's voice with good accuracy**  
 - **REALISTIC: Perfect timing sync is challenging due to natural speech variations**
-- App prioritizes Azure Aria young voice with accurate word-by-word highlighting during speech
+- App prioritizes Azure Jenny voice with accurate word-by-word highlighting during speech
 - **UPDATED: Removed "Bible" from main title - now simply "Ask Maggie Questions"**
 - **REMOVED: Test Childlike Voices section as requested**
-- **ADDED: Voice switching capability via AZURE_VOICE environment variable**
+- **ADDED: Voice switching capability via AZURE_VOICE environment variable (default: Jenny, option: Aria)**
