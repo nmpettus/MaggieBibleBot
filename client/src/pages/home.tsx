@@ -45,21 +45,22 @@ export default function Home() {
     const words = text.split(/\s+/);
     
     return words.map((word, index) => (
-      <span
-        key={index}
-        className={`transition-all duration-100 ${
-          currentWordIndex === index
-            ? 'bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-md font-semibold shadow-sm border border-blue-300 scale-105'
-            : 'hover:bg-gray-50'
-        }`}
-        style={{
-          display: 'inline-block',
-          transformOrigin: 'center',
-        }}
-      >
-        {word}
-        {index < words.length - 1 ? ' ' : ''}
-      </span>
+      <React.Fragment key={index}>
+        <span
+          className={`transition-all duration-100 ${
+            currentWordIndex === index
+              ? 'bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-md font-semibold shadow-sm border border-blue-300 scale-105'
+              : 'hover:bg-gray-50'
+          }`}
+          style={{
+            display: 'inline-block',
+            transformOrigin: 'center',
+          }}
+        >
+          {word}
+        </span>
+        {index < words.length - 1 && ' '}
+      </React.Fragment>
     ));
   };
   
