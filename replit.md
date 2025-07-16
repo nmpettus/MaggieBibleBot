@@ -135,3 +135,7 @@ The application is designed to be easily deployable on Replit with automatic env
 - **REMOVED: Test Childlike Voices section as requested**
 - **ADDED: Voice switching capability via AZURE_VOICE environment variable (default: Sara, options: Jenny, Aria, Ana, Emma)**
 - **ENHANCED: Improved Azure audio playback with retry logic for Safari compatibility**
+- **FIXED: Stop button now properly halts Azure Sara audio and clears word highlighting**
+- **PRIORITY: Azure Sara voice always starts first, no browser fallback unless absolutely necessary**
+- **CONFIGURED: Aggressive auto-play for Azure Sara to bypass Safari restrictions**
+- **USER PREFERENCE: Always use Azure Sara voice immediately without asking for permission**

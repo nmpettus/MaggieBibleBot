@@ -466,16 +466,17 @@ export default function Home() {
         
         // Set up proper event handlers first
         audio.onloadeddata = () => {
-          console.log(`🎵 ${voiceUsed} data loaded, attempting automatic playback...`);
-          // Try playing immediately when data is loaded
+          console.log(`🎵 ${voiceUsed} data loaded, starting Sara immediately...`);
+          // Force play Sara voice without waiting
           audio.play()
             .then(() => {
               console.log(`✅ ${voiceUsed} auto-play successful! Duration: ${audio.duration}s`);
               startWordHighlightingWithRealTime(text, audio);
             })
             .catch((error) => {
-              console.log(`⚠️ ${voiceUsed} auto-play blocked: ${error.message}`);
-              // Don't fallback immediately, wait for user interaction attempt
+              console.log(`⚠️ ${voiceUsed} blocked, forcing play attempt...`);
+              // Immediately try the attempt play function instead of waiting
+              attemptPlay(1, true);
             });
         };
         
@@ -525,59 +526,30 @@ export default function Home() {
               // More attempts with different strategies
               setTimeout(() => attemptPlay(attempt + 1, userTriggered), 300 * attempt);
             } else {
-              console.log(`⚠️ ${voiceUsed} failed all 5 attempts. Azure Sara audio is generated but Safari blocks playback.`);
-              console.log(`💡 Click anywhere on the page to enable Azure Sara audio playback.`);
+              console.log(`⚠️ ${voiceUsed} failed all attempts - keeping audio ready for manual play`);
+              // Don't fallback to browser TTS immediately, keep Azure Sara audio ready
+              // Audio is loaded and ready, just needs user interaction
+              console.log(`🎯 ${voiceUsed} audio is ready but needs user click to play`);
               
-              // Show user message about clicking to enable audio
-              const enableButton = document.createElement('div');
-              enableButton.style.cssText = `
-                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-                background: #4F46E5; color: white; padding: 12px 24px;
-                border-radius: 8px; cursor: pointer; z-index: 1000;
-                font-family: system-ui; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-              `;
-              enableButton.textContent = `Click to hear ${voiceUsed} voice`;
-              enableButton.onclick = () => {
-                audio.play().then(() => {
-                  console.log(`✅ ${voiceUsed} enabled via user click!`);
-                  startWordHighlightingWithRealTime(text, audio);
-                  enableButton.remove();
-                }).catch(() => {
-                  console.log(`❌ ${voiceUsed} still blocked, using browser fallback`);
-                  enableButton.remove();
-                  setIsSpeaking(false);
-                  setCurrentAudio(null);
-                  if (speechSynthesis) {
-                    setIsSpeaking(true);
-                    playBrowserTTS(text);
-                  }
-                });
-              };
-              document.body.appendChild(enableButton);
-              
-              // Auto-remove button after 10 seconds
-              setTimeout(() => {
-                if (enableButton.parentNode) {
-                  enableButton.remove();
-                  if (audio.paused) {
-                    setIsSpeaking(false);
-                    setCurrentAudio(null);
-                    if (speechSynthesis) {
-                      setIsSpeaking(true);
-                      playBrowserTTS(text);
-                    }
-                  }
-                }
-              }, 10000);
+              // Keep the audio element available but don't auto-fallback
+              // User can still manually click play button to hear Sara
             }
           }
         };
         
-        // Add click event to body to enable audio on next user interaction
+        // Enhanced click event to prioritize Sara voice
         const enableAudioOnClick = () => {
-          console.log(`🎯 User interaction detected, enabling ${voiceUsed} playback`);
+          console.log(`🎯 User interaction detected, playing ${voiceUsed} voice`);
           if (audio && audio.paused) {
-            attemptPlay(1, true);
+            audio.play()
+              .then(() => {
+                console.log(`✅ ${voiceUsed} started via user interaction!`);
+                startWordHighlightingWithRealTime(text, audio);
+              })
+              .catch(() => {
+                console.log(`❌ ${voiceUsed} still blocked after user interaction`);
+                attemptPlay(1, true);
+              });
           }
           document.body.removeEventListener('click', enableAudioOnClick);
         };
@@ -616,30 +588,18 @@ export default function Home() {
       } catch (error) {
         console.error('ElevenLabs speech error:', error);
         
-        // Check if this is actually Azure TTS working (status 500 with fallback message)
-        if (error.message && error.message.includes('temporarily unavailable')) {
-          console.log('ElevenLabs technical issue, using browser speech:', error.message);
-          setCurrentVoiceInfo("Azure Jenny");
-          console.log('⚠️ ElevenLabs Faith voice temporarily unavailable - switching to Azure TTS');
-          // Continue to browser TTS fallback below (Azure audio will play via API)
-        } else {
-          setIsSpeaking(false);
-          
-          // Faith voice failed - use enhanced free TTS as fallback
-          if (error.message === 'QUOTA_EXCEEDED') {
-            console.log('⚠️ Faith voice quota exceeded - switching to enhanced free TTS');
-          } else if (error.message === 'FAITH_VOICE_ERROR') {
-            console.log('⚠️ ElevenLabs Faith voice temporarily unavailable - switching to enhanced free TTS');
-          } else {
-            console.log('⚠️ ElevenLabs service unavailable - switching to enhanced free TTS');
-          }
-          // Continue to enhanced free TTS fallback below
-        }
+        // Always check for Azure TTS response regardless of error
+        console.log('⚠️ Faith voice failed - Azure Sara should be available via server fallback');
+        
+        // Don't immediately fall back to browser TTS
+        // The server should provide Azure Sara audio via the /api/generate-speech endpoint
+        setIsSpeaking(false);
+        return;
       }
     }
 
-    // Enhanced free TTS fallback with child-optimized voice
-    console.log('Using enhanced free TTS with child-optimized voice');
+    // If we reach here, no server TTS worked, try browser fallback
+    console.log('⚠️ Server TTS unavailable, using browser fallback');
     
     if (!speechSynthesis) {
       console.log('⚠️ Speech synthesis not available in this browser');
@@ -945,7 +905,8 @@ export default function Home() {
       stopSpeaking();
       stopWordHighlighting();
     } else if (response) {
-      console.log('Speaking response answer:', response.answer?.substring(0, 50) + '...');
+      console.log('Starting Azure Sara voice for:', response.answer?.substring(0, 50) + '...');
+      // Always prioritize Azure Sara voice
       speakText(response.answer);
     } else {
       console.log('No response available to speak');
