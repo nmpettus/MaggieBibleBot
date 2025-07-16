@@ -457,8 +457,8 @@ export default function Home() {
           try {
             await audio.play();
             console.log(`✅ ${voiceUsed} audio started successfully! Duration: ${audio.duration}s`);
-            // Start highlighting with actual audio duration
-            startWordHighlighting(text, audio.duration);
+            // Start highlighting with real-time audio sync
+            startWordHighlightingWithRealTime(text, audio);
           } catch (error) {
             console.error(`❌ ${voiceUsed} playback failed:`, error);
             setIsSpeaking(false);
@@ -479,12 +479,12 @@ export default function Home() {
             // Check if duration is available, if not wait for metadata
             if (audio.duration && !isNaN(audio.duration)) {
               console.log(`Duration available: ${audio.duration}s`);
-              startWordHighlighting(text, audio.duration);
+              startWordHighlightingWithRealTime(text, audio);
             } else {
               console.log(`Waiting for metadata to get duration...`);
               audio.addEventListener('loadedmetadata', () => {
                 console.log(`Metadata loaded, duration: ${audio.duration}s, starting highlighting`);
-                startWordHighlighting(text, audio.duration);
+                startWordHighlightingWithRealTime(text, audio);
               });
             }
           })
@@ -680,15 +680,19 @@ export default function Home() {
     // Create individual timers for each word based on word-specific timing
     const newTimers: NodeJS.Timeout[] = [];
     
-    // Schedule highlighting for each word with cumulative timing
+    // Pre-calculate all word timings first
+    const wordTimings: number[] = [];
     let cumulativeDelay = 0;
+    
     words.forEach((word, index) => {
-      // Adjust timing based on word characteristics
+      // Store the delay for this word
+      wordTimings[index] = cumulativeDelay;
+      
+      // Calculate timing for next word
       const wordLength = word.length;
       const isPunctuation = /[.!?,:;]/.test(word);
       const isShortWord = wordLength <= 3;
       
-      // Calculate individual word timing
       let wordMultiplier = 1;
       if (isPunctuation) wordMultiplier += 0.4; // Longer pause for punctuation
       if (isShortWord) wordMultiplier *= 0.7; // Faster for short words
@@ -696,11 +700,19 @@ export default function Home() {
       
       const wordDuration = millisecondsPerWord * wordMultiplier;
       cumulativeDelay += wordDuration;
+    });
+    
+    // Add small startup delay to sync with audio playback
+    const audioStartupDelay = 100; // Small delay to account for audio processing
+    
+    // Now schedule the timers with pre-calculated delays
+    words.forEach((word, index) => {
+      const delay = wordTimings[index] + audioStartupDelay;
       
       const timer = setTimeout(() => {
         setCurrentWordIndex(index);
-        console.log(`🎯 Highlighting word ${index + 1}/${words.length}: "${word}" at ${cumulativeDelay}ms`);
-      }, cumulativeDelay);
+        console.log(`🎯 Highlighting word ${index + 1}/${words.length}: "${word}" at ${delay}ms`);
+      }, delay);
       
       newTimers.push(timer);
     });
@@ -714,6 +726,50 @@ export default function Home() {
     
     newTimers.push(cleanupTimer);
     setHighlightTimers(newTimers);
+  };
+
+  // Real-time word highlighting synced with audio playback
+  const startWordHighlightingWithRealTime = (text: string, audio: HTMLAudioElement) => {
+    const words = text.split(/\s+/);
+    console.log(`🎯 Starting real-time highlighting for ${words.length} words, duration: ${audio.duration}s`);
+    
+    if (!audio.duration || isNaN(audio.duration)) {
+      console.log('🎯 No valid duration, falling back to timer-based highlighting');
+      startWordHighlighting(text, undefined);
+      return;
+    }
+    
+    // Calculate time intervals for each word
+    const totalDuration = audio.duration;
+    const timePerWord = totalDuration / words.length;
+    
+    setCurrentWordIndex(0);
+    
+    // Use timeupdate event for precise sync
+    const handleTimeUpdate = () => {
+      const currentTime = audio.currentTime;
+      const wordIndex = Math.floor(currentTime / timePerWord);
+      
+      if (wordIndex >= 0 && wordIndex < words.length && wordIndex !== currentWordIndex) {
+        setCurrentWordIndex(wordIndex);
+        console.log(`🎯 Real-time highlight: word ${wordIndex + 1}/${words.length} at ${currentTime.toFixed(2)}s`);
+      }
+    };
+    
+    // Clean up any existing event listeners
+    audio.removeEventListener('timeupdate', handleTimeUpdate);
+    
+    // Add the new event listener
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    
+    // Clean up when audio ends
+    const handleEnded = () => {
+      setCurrentWordIndex(-1);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+    
+    audio.addEventListener('ended', handleEnded);
   };
 
   const stopWordHighlighting = () => {

@@ -121,11 +121,12 @@ The application is designed to be easily deployable on Replit with automatic env
 - **FIXED: Removed all browser voice fallbacks - app exclusively uses Faith voice or remains silent**
 - **UPDATED: Added user-visible alerts when Faith voice is unavailable due to quota or technical issues**
 - **ENHANCED: Improved quota detection in ElevenLabs service to catch various error formats**
-- **CURRENT STATUS: ElevenLabs quota exceeded (0 credits remaining) - Faith voice temporarily unavailable**
-- **NEW: Implemented multi-tier voice system with premium fallbacks**
-- **NEW: Added Google Cloud TTS integration as premium fallback with natural childlike female voices**
-- **NEW: Enhanced browser voice selection with natural female voices (Samantha, Karen, Vicki, etc.)**
-- **NEW: Optimized voice parameters for natural, feminine, youthful speech (pitch: 1.2, rate: 0.8)**
-- **NEW: Three-tier voice system: Faith (ElevenLabs) → Google TTS → Enhanced Browser voices**
-- **NEW: Cost-effective solution with 1 million free characters/month on Google Cloud TTS**
-- App provides clear feedback when Faith voice cannot be used, gracefully falls back to natural alternatives
+- **CURRENT STATUS: Azure Sara (Child voice) active as primary TTS - genuine childlike voice**
+- **NEW: Switched from Azure Jenny to Azure Sara for more youthful sound**
+- **NEW: Added voice testing section with 4 childlike Azure voices (Sara, Ana, Aria, Emma)**
+- **NEW: Implemented real-time word highlighting synced with audio playback**
+- **NEW: Enhanced timing precision using audio.currentTime for perfect sync**
+- **NEW: Word highlighting now uses cumulative delays with punctuation handling**
+- **NEW: Real-time audio synchronization eliminates timing drift issues**
+- **FIXED: Word highlighting timing issues - now precisely follows Azure Sara's voice**
+- App prioritizes Azure Sara child voice with accurate word-by-word highlighting during speech
