@@ -84,6 +84,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get available Azure childlike voices for testing
+  app.get("/api/azure-voices", async (req, res) => {
+    try {
+      const { getAzureTTSVoices, AZURE_CHILDLIKE_VOICES } = await import("./services/azureTTS.js");
+      res.json({ voices: AZURE_CHILDLIKE_VOICES });
+    } catch (error) {
+      console.error("Error fetching Azure voices:", error);
+      res.status(500).json({ message: "Failed to get Azure voices" });
+    }
+  });
+
+  // Test specific Azure voice
+  app.post("/api/test-azure-voice", async (req, res) => {
+    try {
+      const { text, voiceName } = req.body;
+      
+      if (!text || !voiceName) {
+        return res.status(400).json({ message: "Text and voiceName are required" });
+      }
+
+      const { generateSpeechAzureTTS } = await import("./services/azureTTS.js");
+      const azureBuffer = await generateSpeechAzureTTS(text, voiceName);
+      
+      if (azureBuffer && azureBuffer.length > 0) {
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', azureBuffer.length.toString());
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('X-Voice-Used', `Azure ${voiceName.split('-')[2]?.replace('Neural', '')}`);
+        
+        console.log(`✅ Azure voice test succeeded: ${voiceName}`);
+        return res.send(azureBuffer);
+      }
+      
+      throw new Error("Azure TTS failed to generate audio");
+      
+    } catch (error) {
+      console.error("Azure voice test error:", error);
+      res.status(500).json({ message: "Failed to test Azure voice", error: error.message });
+    }
+  });
+
   // Generate speech with ElevenLabs Faith voice and Azure TTS fallback
   app.post("/api/generate-speech", async (req, res) => {
     try {
@@ -115,9 +156,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // If ElevenLabs fails, try Azure TTS as premium fallback
         try {
-          console.log(`🔊 Falling back to Azure TTS natural child voice`);
+          console.log(`🔊 Falling back to Azure TTS genuine child voice`);
           
-          const azureAudioBuffer = await generateSpeechAzureTTS(text, 'en-US-JennyNeural');
+          const azureAudioBuffer = await generateSpeechAzureTTS(text, 'en-US-SaraNeural');
           
           console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
           
@@ -125,10 +166,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.setHeader('Content-Type', 'audio/mpeg');
           res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
           res.setHeader('Cache-Control', 'public, max-age=3600');
-          res.setHeader('X-Voice-Used', 'Azure Jenny');
+          res.setHeader('X-Voice-Used', 'Azure Sara');
           
           console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
-          console.log(`🎯 Setting voice header: Azure Jenny`);
+          console.log(`🎯 Setting voice header: Azure Sara`);
           console.log(`📋 Response headers before send:`, res.getHeaders());
           return res.send(azureAudioBuffer);
           
