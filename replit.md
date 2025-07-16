@@ -141,4 +141,5 @@ The application is designed to be easily deployable on Replit with automatic env
 - **USER PREFERENCE: Always use Azure Sara voice immediately without asking for permission**
 - **ENHANCED: Precise word highlighting that syncs exactly with Azure Sara's speech timing**
 - **TIMING: Word highlighting now uses real-time audio sync with word complexity calculations**
-- **VISUAL: Improved highlighting with blue background and smooth transitions for better readability**
+- **VISUAL: Changed highlighting from blue background to clean underline effect for better readability**
+- **STYLE: Word highlighting now uses blue underline with proper offset and thickness**

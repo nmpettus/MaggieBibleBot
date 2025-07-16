@@ -49,8 +49,8 @@ export default function Home() {
         key={index}
         className={`transition-all duration-100 ${
           currentWordIndex === index
-            ? 'bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-md font-semibold shadow-sm border border-blue-300 scale-105'
-            : 'hover:bg-gray-50'
+            ? 'underline decoration-blue-500 decoration-2 underline-offset-2 font-semibold text-blue-700'
+            : 'hover:text-gray-600'
         }`}
         style={{
           display: 'inline-block',
