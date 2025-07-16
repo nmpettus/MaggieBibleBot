@@ -434,6 +434,10 @@ export default function Home() {
 
         const audioBuffer = await response.arrayBuffer();
         
+        // Get the actual voice used from response headers
+        const voiceUsed = response.headers.get('X-Voice-Used') || 'Faith';
+        console.log(`🎯 Voice indicator set to: ${voiceUsed}`);
+        
         // Use HTML5 Audio for better compatibility
         const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' });
         const audioUrl = URL.createObjectURL(audioBlob);
@@ -441,7 +445,7 @@ export default function Home() {
         
         // Set as current audio for cleanup
         setCurrentAudio(audio);
-        setCurrentVoiceInfo("Faith Voice");
+        setCurrentVoiceInfo(voiceUsed);
         
         // Safari requires user interaction for autoplay, but this is triggered by user action
         audio.oncanplaythrough = () => {

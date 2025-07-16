@@ -101,13 +101,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const audioBuffer = await generateSpeechElevenLabs(text, selectedVoiceId);
         
         // Set appropriate headers for audio response
-        res.set({
-          'Content-Type': 'audio/mpeg',
-          'Content-Length': audioBuffer.byteLength.toString(),
-          'Cache-Control': 'public, max-age=3600'
-        });
+        res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('Content-Length', audioBuffer.byteLength.toString());
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('X-Voice-Used', 'Faith');
         
         console.log(`✅ Faith voice succeeded: ${audioBuffer.byteLength} bytes`);
+        console.log(`🎯 Setting voice header: Faith`);
         return res.send(Buffer.from(audioBuffer));
         
       } catch (elevenLabsError) {
@@ -119,14 +119,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const azureAudioBuffer = await generateSpeechAzureTTS(text, 'en-US-JennyNeural');
           
+          console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
+          
           // Set appropriate headers for audio response
-          res.set({
-            'Content-Type': 'audio/mpeg',
-            'Content-Length': azureAudioBuffer.byteLength.toString(),
-            'Cache-Control': 'public, max-age=3600'
-          });
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+          res.setHeader('X-Voice-Used', 'Azure Jenny');
           
           console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
+          console.log(`🎯 Setting voice header: Azure Jenny`);
+          console.log(`📋 Response headers before send:`, res.getHeaders());
           return res.send(azureAudioBuffer);
           
         } catch (azureError) {
@@ -166,9 +169,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const voices = await getAzureTTSVoices();
       res.json({ voices });
     } catch (error) {
-      console.error("Error fetching Google TTS voices:", error);
-      res.status(500).json({ message: "Unable to fetch Google TTS voices" });
+      console.error("Error fetching Azure TTS voices:", error);
+      res.status(500).json({ message: "Unable to fetch Azure TTS voices" });
     }
+  });
+
+  // Test endpoint for voice header debugging
+  app.post("/api/test-voice-header", (req, res) => {
+    res.setHeader('X-Voice-Used', 'Test Voice');
+    res.setHeader('Content-Type', 'application/json');
+    console.log('🧪 Test endpoint - headers set:', res.getHeaders());
+    res.json({ message: 'Voice header test', headers: res.getHeaders() });
   });
 
   const httpServer = createServer(app);
