@@ -438,73 +438,84 @@ export default function Home() {
         const voiceUsed = response.headers.get('X-Voice-Used') || 'Faith';
         console.log(`🎯 Voice indicator set to: ${voiceUsed}`);
         
-        // Use HTML5 Audio for better compatibility
-        const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
+        // Use HTML5 Audio for better compatibility - try multiple formats
+        let audioBlob, audioUrl, audio;
+        
+        // Try different audio formats for better Safari compatibility
+        const audioFormats = [
+          { type: 'audio/mp3', ext: 'mp3' },
+          { type: 'audio/mpeg', ext: 'mp3' },
+          { type: 'audio/wav', ext: 'wav' }
+        ];
+        
+        const format = audioFormats[0]; // Start with mp3
+        audioBlob = new Blob([audioBuffer], { type: format.type });
+        audioUrl = URL.createObjectURL(audioBlob);
+        audio = new Audio();
+        audio.preload = 'auto';
+        audio.crossOrigin = 'anonymous';
+        audio.src = audioUrl;
+        
+        console.log(`🎵 Created ${voiceUsed} audio blob: ${audioBlob.size} bytes, type: ${format.type}`);
         
         // Set as current audio for cleanup
         setCurrentAudio(audio);
         setCurrentVoiceInfo(voiceUsed);
         
         // Set up proper event handlers first
+        audio.onloadeddata = () => {
+          console.log(`🎵 ${voiceUsed} data loaded, attempting playback...`);
+          // Try playing immediately when data is loaded
+          audio.play()
+            .then(() => {
+              console.log(`✅ ${voiceUsed} audio started successfully! Duration: ${audio.duration}s`);
+              startWordHighlightingWithRealTime(text, audio);
+            })
+            .catch((error) => {
+              console.log(`⚠️ ${voiceUsed} auto-play blocked, will try on user interaction`);
+            });
+        };
+        
         audio.onloadedmetadata = () => {
           console.log(`🎵 ${voiceUsed} metadata loaded, duration: ${audio.duration}s`);
         };
         
-        audio.oncanplaythrough = async () => {
-          console.log(`🎵 ${voiceUsed} can play through, starting playback...`);
+        audio.oncanplaythrough = () => {
+          console.log(`🎵 ${voiceUsed} can play through, ready for playback`);
+        };
+        
+        // Try immediate play with user gesture (required for Safari)
+        console.log(`🎵 Starting ${voiceUsed} playback with user gesture...`);
+        
+        // Force load the audio
+        audio.load();
+        
+        // Multiple attempts to ensure playback works
+        const attemptPlay = async (attempt = 1) => {
           try {
+            console.log(`🎯 ${voiceUsed} play attempt ${attempt}`);
             await audio.play();
-            console.log(`✅ ${voiceUsed} audio started successfully! Duration: ${audio.duration}s`);
-            // Start highlighting with real-time audio sync
+            console.log(`✅ ${voiceUsed} playback successful on attempt ${attempt}!`);
             startWordHighlightingWithRealTime(text, audio);
           } catch (error) {
-            console.error(`❌ ${voiceUsed} playback failed:`, error);
-            console.log(`🔄 Retrying ${voiceUsed} playback after user interaction...`);
-            // Try again after a brief delay - sometimes Safari needs this
-            setTimeout(async () => {
-              try {
-                await audio.play();
-                console.log(`✅ ${voiceUsed} retry successful!`);
-                startWordHighlightingWithRealTime(text, audio);
-              } catch (retryError) {
-                console.log(`⚠️ ${voiceUsed} retry failed, using browser fallback`);
-                setIsSpeaking(false);
-                setCurrentAudio(null);
-                if (speechSynthesis) {
-                  setIsSpeaking(true);
-                  playBrowserTTS(text);
-                }
+            console.log(`❌ ${voiceUsed} attempt ${attempt} failed: ${error.message}`);
+            if (attempt < 3) {
+              // Try again after a short delay
+              setTimeout(() => attemptPlay(attempt + 1), 200 * attempt);
+            } else {
+              console.log(`⚠️ ${voiceUsed} failed all attempts, using browser fallback`);
+              setIsSpeaking(false);
+              setCurrentAudio(null);
+              if (speechSynthesis) {
+                setIsSpeaking(true);
+                playBrowserTTS(text);
               }
-            }, 100);
+            }
           }
         };
         
-        // Try immediate play if already ready (Safari user gesture requirement)
-        console.log(`🎵 Starting ${voiceUsed} playback with user gesture...`);
-        
-        // Add a small delay to ensure audio is fully loaded
-        setTimeout(() => {
-          audio.play()
-            .then(() => {
-              console.log(`✅ ${voiceUsed} immediate play successful!`);
-              // Check if duration is available, if not wait for metadata
-              if (audio.duration && !isNaN(audio.duration)) {
-                console.log(`Duration available: ${audio.duration}s`);
-                startWordHighlightingWithRealTime(text, audio);
-              } else {
-                console.log(`Waiting for metadata to get duration...`);
-                audio.addEventListener('loadedmetadata', () => {
-                  console.log(`Metadata loaded, duration: ${audio.duration}s, starting highlighting`);
-                  startWordHighlightingWithRealTime(text, audio);
-                });
-              }
-            })
-            .catch((error) => {
-              console.log(`⚠️ Immediate play failed, waiting for canplaythrough: ${error.message}`);
-            });
-        }, 50);
+        // Start the first attempt immediately
+        attemptPlay();
 
 
         
