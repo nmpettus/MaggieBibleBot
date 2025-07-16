@@ -447,32 +447,53 @@ export default function Home() {
         setCurrentAudio(audio);
         setCurrentVoiceInfo(voiceUsed);
         
-        // Safari requires user interaction for autoplay, but this is triggered by user action
-        audio.oncanplaythrough = () => {
-          const generationTime = Date.now() - startTime;
-          console.log(`🚀 Audio ready in ${generationTime}ms, attempting to play...`);
-          
-          // Force play immediately (user already interacted by clicking)
-          audio.play()
-            .then(() => {
-              console.log('✅ Audio playback started successfully');
-              // Start word highlighting when audio starts with precise duration
-              const audioDuration = audio.duration || undefined;
-              startWordHighlighting(text, audioDuration);
-            })
-            .catch(error => {
-              console.error('Audio play error (trying fallback):', error);
-              // Try browser TTS as fallback
-              setIsSpeaking(false);
-              setCurrentAudio(null);
-              
-              // Fallback to enhanced browser speech
-              if (speechSynthesis) {
-                setIsSpeaking(true);
-                playBrowserTTS(text);
-                console.log('🔄 Fallback to enhanced browser speech synthesis');
+        // Multiple strategies for reliable audio playback
+        const tryPlayAudio = async () => {
+          try {
+            // Strategy 1: Direct play (works if user just interacted)
+            await audio.play();
+            console.log(`✅ ${voiceUsed} audio playback started successfully`);
+            startWordHighlighting(text, audio.duration);
+            return true;
+          } catch (error) {
+            console.log(`⚠️ Direct play failed for ${voiceUsed}, trying user gesture approach:`, error.message);
+            
+            // Strategy 2: Wait for user gesture if needed
+            if (error.name === 'NotAllowedError') {
+              console.log(`🔄 ${voiceUsed} audio ready but needs user interaction`);
+              // Audio is ready, just needs user gesture - try immediate retry
+              try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                await audio.play();
+                console.log(`✅ ${voiceUsed} audio started after retry`);
+                startWordHighlighting(text, audio.duration);
+                return true;
+              } catch (retryError) {
+                console.log(`⚠️ ${voiceUsed} audio retry failed:`, retryError.message);
               }
-            });
+            }
+            return false;
+          }
+        };
+
+        audio.oncanplaythrough = async () => {
+          const generationTime = Date.now() - startTime;
+          console.log(`🚀 ${voiceUsed} audio ready in ${generationTime}ms, attempting to play...`);
+          
+          const playSucceeded = await tryPlayAudio();
+          
+          if (!playSucceeded) {
+            console.error(`❌ ${voiceUsed} audio playback failed, falling back to browser TTS`);
+            setIsSpeaking(false);
+            setCurrentAudio(null);
+            
+            // Only fallback to browser TTS if premium audio completely fails
+            if (speechSynthesis) {
+              setIsSpeaking(true);
+              playBrowserTTS(text);
+              console.log('🔄 Fallback to enhanced browser speech synthesis');
+            }
+          }
         };
         
         audio.onended = () => {
@@ -500,11 +521,14 @@ export default function Home() {
         audio.preload = 'auto';
         audio.load();
         
-        // Also try to play when loaded
-        audio.addEventListener('loadeddata', () => {
-          console.log('Audio data loaded, trying immediate play...');
+        // Try to play as soon as sufficient data is loaded
+        audio.addEventListener('loadeddata', async () => {
+          console.log(`${voiceUsed} audio data loaded, trying immediate play...`);
           if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
-            audio.play().catch(err => console.log('Immediate play failed, waiting for canplaythrough'));
+            const immediatePlaySuccess = await tryPlayAudio();
+            if (!immediatePlaySuccess) {
+              console.log(`${voiceUsed} immediate play failed, waiting for canplaythrough`);
+            }
           }
         });
         return;
