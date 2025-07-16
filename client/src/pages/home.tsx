@@ -464,15 +464,16 @@ export default function Home() {
         
         // Set up proper event handlers first
         audio.onloadeddata = () => {
-          console.log(`🎵 ${voiceUsed} data loaded, attempting playback...`);
+          console.log(`🎵 ${voiceUsed} data loaded, attempting automatic playback...`);
           // Try playing immediately when data is loaded
           audio.play()
             .then(() => {
-              console.log(`✅ ${voiceUsed} audio started successfully! Duration: ${audio.duration}s`);
+              console.log(`✅ ${voiceUsed} auto-play successful! Duration: ${audio.duration}s`);
               startWordHighlightingWithRealTime(text, audio);
             })
             .catch((error) => {
-              console.log(`⚠️ ${voiceUsed} auto-play blocked, will try on user interaction`);
+              console.log(`⚠️ ${voiceUsed} auto-play blocked: ${error.message}`);
+              // Don't fallback immediately, wait for user interaction attempt
             });
         };
         
@@ -490,31 +491,97 @@ export default function Home() {
         // Force load the audio
         audio.load();
         
-        // Multiple attempts to ensure playback works
-        const attemptPlay = async (attempt = 1) => {
+        // Enhanced playback with user interaction detection
+        const attemptPlay = async (attempt = 1, userTriggered = false) => {
           try {
-            console.log(`🎯 ${voiceUsed} play attempt ${attempt}`);
-            await audio.play();
+            console.log(`🎯 ${voiceUsed} play attempt ${attempt} (user: ${userTriggered})`);
+            
+            // For Safari, try different approaches
+            if (attempt === 1 && !userTriggered) {
+              // First attempt - immediate play
+              await audio.play();
+            } else if (attempt === 2) {
+              // Second attempt - reload and play
+              audio.load();
+              await new Promise(resolve => setTimeout(resolve, 100));
+              await audio.play();
+            } else {
+              // Third attempt - create new audio element
+              const newAudio = new Audio(audioUrl);
+              newAudio.preload = 'auto';
+              setCurrentAudio(newAudio);
+              await newAudio.play();
+              // Replace the old audio reference
+              Object.assign(audio, newAudio);
+            }
+            
             console.log(`✅ ${voiceUsed} playback successful on attempt ${attempt}!`);
             startWordHighlightingWithRealTime(text, audio);
           } catch (error) {
             console.log(`❌ ${voiceUsed} attempt ${attempt} failed: ${error.message}`);
-            if (attempt < 3) {
-              // Try again after a short delay
-              setTimeout(() => attemptPlay(attempt + 1), 200 * attempt);
+            if (attempt < 5) {
+              // More attempts with different strategies
+              setTimeout(() => attemptPlay(attempt + 1, userTriggered), 300 * attempt);
             } else {
-              console.log(`⚠️ ${voiceUsed} failed all attempts, using browser fallback`);
-              setIsSpeaking(false);
-              setCurrentAudio(null);
-              if (speechSynthesis) {
-                setIsSpeaking(true);
-                playBrowserTTS(text);
-              }
+              console.log(`⚠️ ${voiceUsed} failed all 5 attempts. Azure Sara audio is generated but Safari blocks playback.`);
+              console.log(`💡 Click anywhere on the page to enable Azure Sara audio playback.`);
+              
+              // Show user message about clicking to enable audio
+              const enableButton = document.createElement('div');
+              enableButton.style.cssText = `
+                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+                background: #4F46E5; color: white; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; z-index: 1000;
+                font-family: system-ui; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              `;
+              enableButton.textContent = `Click to hear ${voiceUsed} voice`;
+              enableButton.onclick = () => {
+                audio.play().then(() => {
+                  console.log(`✅ ${voiceUsed} enabled via user click!`);
+                  startWordHighlightingWithRealTime(text, audio);
+                  enableButton.remove();
+                }).catch(() => {
+                  console.log(`❌ ${voiceUsed} still blocked, using browser fallback`);
+                  enableButton.remove();
+                  setIsSpeaking(false);
+                  setCurrentAudio(null);
+                  if (speechSynthesis) {
+                    setIsSpeaking(true);
+                    playBrowserTTS(text);
+                  }
+                });
+              };
+              document.body.appendChild(enableButton);
+              
+              // Auto-remove button after 10 seconds
+              setTimeout(() => {
+                if (enableButton.parentNode) {
+                  enableButton.remove();
+                  if (audio.paused) {
+                    setIsSpeaking(false);
+                    setCurrentAudio(null);
+                    if (speechSynthesis) {
+                      setIsSpeaking(true);
+                      playBrowserTTS(text);
+                    }
+                  }
+                }
+              }, 10000);
             }
           }
         };
         
-        // Start the first attempt immediately
+        // Add click event to body to enable audio on next user interaction
+        const enableAudioOnClick = () => {
+          console.log(`🎯 User interaction detected, enabling ${voiceUsed} playback`);
+          if (audio && audio.paused) {
+            attemptPlay(1, true);
+          }
+          document.body.removeEventListener('click', enableAudioOnClick);
+        };
+        document.body.addEventListener('click', enableAudioOnClick);
+        
+        // Start the first attempt immediately (might work if user gesture is recent)
         attemptPlay();
 
 
