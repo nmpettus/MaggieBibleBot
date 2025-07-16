@@ -44,24 +44,23 @@ export default function Home() {
   const renderHighlightedText = (text: string) => {
     const words = text.split(/\s+/);
     
-    return words.map((word, index) => (
-      <React.Fragment key={index}>
-        <span
-          className={`transition-all duration-100 ${
-            currentWordIndex === index
-              ? 'bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-md font-semibold shadow-sm border border-blue-300 scale-105'
-              : 'hover:bg-gray-50'
-          }`}
-          style={{
-            display: 'inline-block',
-            transformOrigin: 'center',
-          }}
-        >
-          {word}
-        </span>
-        {index < words.length - 1 && ' '}
-      </React.Fragment>
-    ));
+    return words.map((word, index) => [
+      <span
+        key={index}
+        className={`transition-all duration-100 ${
+          currentWordIndex === index
+            ? 'bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-md font-semibold shadow-sm border border-blue-300 scale-105'
+            : 'hover:bg-gray-50'
+        }`}
+        style={{
+          display: 'inline-block',
+          transformOrigin: 'center',
+        }}
+      >
+        {word}
+      </span>,
+      index < words.length - 1 ? ' ' : null
+    ]).flat();
   };
   
   // Speech recognition hook
@@ -842,6 +841,8 @@ export default function Home() {
       // Adjust for word complexity and punctuation
       for (let i = 0; i <= wordIndex; i++) {
         const currentWord = words[i];
+        if (!currentWord) continue; // Skip if word is undefined
+        
         const wordLength = currentWord.length;
         const hasPunctuation = /[.!?,:;]/.test(currentWord);
         
