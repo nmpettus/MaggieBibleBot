@@ -42,7 +42,13 @@ export async function generateSpeechAzureTTS(
   voiceName: string = "en-US-JennyNeural"
 ): Promise<Buffer> {
   const speechKey = process.env.AZURE_SPEECH_KEY;
-  const speechRegion = process.env.AZURE_SPEECH_REGION;
+  let speechRegion = process.env.AZURE_SPEECH_REGION;
+
+  // Fix region if it's incorrectly set to the key value
+  if (speechRegion && speechRegion.length > 20) {
+    console.log("⚠️ Azure region appears to be a key, using 'eastus' instead");
+    speechRegion = "eastus";
+  }
 
   if (!speechKey || !speechRegion) {
     throw new Error("Azure Speech Service credentials not configured");
