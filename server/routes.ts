@@ -158,7 +158,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`🔊 Falling back to Azure TTS genuine child voice`);
           
-          const azureAudioBuffer = await generateSpeechAzureTTS(text, 'en-US-SaraNeural');
+          // Allow voice switching via environment variable (default: Aria)
+          const azureVoice = process.env.AZURE_VOICE || 'en-US-AriaNeural';
+          const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
+          
+          // Extract voice name for display
+          const voiceName = azureVoice.includes('Sara') ? 'Sara' : 
+                           azureVoice.includes('Aria') ? 'Aria' :
+                           azureVoice.includes('Ana') ? 'Ana' :
+                           azureVoice.includes('Emma') ? 'Emma' : 'Aria';
           
           console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
           
@@ -166,10 +174,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.setHeader('Content-Type', 'audio/mpeg');
           res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
           res.setHeader('Cache-Control', 'public, max-age=3600');
-          res.setHeader('X-Voice-Used', 'Azure Sara');
+          res.setHeader('X-Voice-Used', `Azure ${voiceName}`);
           
           console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
-          console.log(`🎯 Setting voice header: Azure Sara`);
+          console.log(`🎯 Setting voice header: Azure ${voiceName}`);
           console.log(`📋 Response headers before send:`, res.getHeaders());
           return res.send(azureAudioBuffer);
           

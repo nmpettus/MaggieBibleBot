@@ -1200,54 +1200,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Voice Testing Section */}
-          <section className="mt-12">
-            <div className="glass-card p-6 max-w-2xl mx-auto">
-              <h3 className="text-xl font-bold text-white mb-4 text-center">🔊 Test Childlike Voices</h3>
-              <p className="text-white/80 text-sm text-center mb-4">Try different Azure child voices to find your favorite</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { name: "en-US-SaraNeural", display: "Sara (Child)", desc: "Current - Genuine child voice" },
-                  { name: "en-US-AnaNeural", display: "Ana (Child)", desc: "Sweet, young voice" },
-                  { name: "en-US-AriaNeural", display: "Aria (Young)", desc: "Clear, natural" },
-                  { name: "en-US-EmmaNeural", display: "Emma (Young)", desc: "Bright, youthful" }
-                ].map((voice) => (
-                  <Button
-                    key={voice.name}
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        const response = await fetch('/api/test-azure-voice', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            text: "Hello! I'm Maggie. I love sharing God's grace and love with you through His word.",
-                            voiceName: voice.name
-                          })
-                        });
-                        
-                        if (response.ok) {
-                          const audioBlob = new Blob([await response.arrayBuffer()], { type: 'audio/mpeg' });
-                          const audioUrl = URL.createObjectURL(audioBlob);
-                          const audio = new Audio(audioUrl);
-                          await audio.play();
-                        }
-                      } catch (error) {
-                        console.error('Voice test failed:', error);
-                      }
-                    }}
-                    className="text-left bg-white/10 hover:bg-white/20 border-white/20 text-white h-auto p-3"
-                  >
-                    <div>
-                      <div className="font-medium text-sm">{voice.display}</div>
-                      <div className="text-xs opacity-80">{voice.desc}</div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </section>
+
 
           {/* Disclaimer at bottom */}
           <footer className="mt-16 pb-8">
