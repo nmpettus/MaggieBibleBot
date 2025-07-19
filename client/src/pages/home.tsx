@@ -1014,11 +1014,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-        <div className="absolute inset-0 opacity-40" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}}></div>
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl floating-animation"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl floating-animation" style={{animationDelay: '3s'}}></div>
+      {/* Soft light background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="absolute inset-0 opacity-30" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2393c5fd' fill-opacity='0.08'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"}}></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl floating-animation"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl floating-animation" style={{animationDelay: '3s'}}></div>
       </div>
 
       <div className="relative z-10">
@@ -1028,7 +1028,7 @@ export default function Home() {
             <Button
               variant="ghost"
               onClick={handleGoBack}
-              className="glass-card inline-flex items-center text-white/80 hover:text-white transition-all duration-300 text-sm font-medium p-3 h-auto magic-button"
+              className="glass-card inline-flex items-center text-gray-700 hover:text-gray-900 transition-all duration-300 text-sm font-medium p-3 h-auto magic-button"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Return to previous page
@@ -1083,7 +1083,7 @@ export default function Home() {
                       onChange={(e) => setQuestion(e.target.value)}
                       rows={3}
                       placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                      className="w-full resize-none bg-white/20 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-xl text-gray-900 placeholder:text-gray-600 focus:bg-white/30 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
+                      className="w-full resize-none bg-white/60 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-xl text-gray-900 placeholder:text-gray-500 focus:bg-white/80 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
                       disabled={askMaggieMutation.isPending}
                     />
                   </div>
@@ -1112,18 +1112,18 @@ export default function Home() {
                 {browserSupportsSpeechRecognition && (
                   <div className="mt-4 text-sm">
                     {listening ? (
-                      <div className="glass-card p-4 text-green-200 font-medium text-center">
+                      <div className="glass-card p-4 text-green-700 font-medium text-center">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                           🎤 Listening... Speak clearly into your microphone
                         </div>
-                        <span className="text-xs text-white/60">
+                        <span className="text-xs text-gray-600">
                           Recording will auto-stop after 30 seconds or click the microphone to stop
                         </span>
                       </div>
                     ) : (
                       <div className="glass-card p-3 text-center">
-                        <span className="text-white/80">
+                        <span className="text-gray-700">
                           💡 Click the microphone to speak your question aloud
                         </span>
                       </div>
@@ -1133,7 +1133,7 @@ export default function Home() {
                 
                 {/* Enhanced Fallback for unsupported browsers */}
                 {!browserSupportsSpeechRecognition && (
-                  <div className="glass-card p-4 mt-4 text-sm text-white/70 text-center">
+                  <div className="glass-card p-4 mt-4 text-sm text-gray-600 text-center">
                     Speech recognition not supported in this browser. Please type your question.
                   </div>
                 )}
@@ -1174,7 +1174,7 @@ export default function Home() {
           {response && (
             <section className="mb-12">
               <div className="glass-card p-1">
-                <Card className="bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-lg border-0 shadow-2xl">
+                <Card className="bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-lg border-0 shadow-2xl">
                   <CardContent className="p-6 sm:p-8">
                     <div className="flex items-start space-x-6">
                       {/* Enhanced Maggie's avatar for response */}
@@ -1195,8 +1195,8 @@ export default function Home() {
                       {/* Enhanced Response header */}
                       <div className="mb-6 flex items-center justify-between">
                         <div>
-                          <h3 className="font-bold text-white text-2xl mb-2 gradient-text">Maggie's Biblical Perspective</h3>
-                          <p className="text-white/80 text-sm bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">Based on the New Testament covenant of Grace</p>
+                          <h3 className="font-bold text-gray-800 text-2xl mb-2 gradient-text">Maggie's Biblical Perspective</h3>
+                          <p className="text-gray-600 text-sm bg-blue-100/60 px-3 py-1 rounded-full backdrop-blur-sm">Based on the New Testament covenant of Grace</p>
                         </div>
                         
                         {/* Listen button with voice indicator */}
@@ -1225,11 +1225,11 @@ export default function Home() {
                                   </>
                                 )}
                               </Button>
-                              <div className="text-xs text-white/80 mt-1 px-3 py-1 bg-black/20 rounded-md backdrop-blur-sm border border-white/20">
+                              <div className="text-xs text-gray-700 mt-1 px-3 py-1 bg-blue-100/60 rounded-md backdrop-blur-sm border border-blue-200/50">
                                 {currentVoiceInfo || 'Loading Voice...'}
                               </div>
                               {isSpeaking && (
-                                <div className="text-xs text-white/60 mt-1 px-2 py-1 bg-black/10 rounded text-center">
+                                <div className="text-xs text-gray-600 mt-1 px-2 py-1 bg-blue-50/60 rounded text-center">
                                   Word highlighting syncs with speech patterns
                                 </div>
                               )}

@@ -55,7 +55,7 @@
 
   body {
     @apply font-sans antialiased;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8f4f8 30%, #f4f1e8 70%, #f8f0e4 100%);
     min-height: 100vh;
   }
 }
@@ -69,7 +69,7 @@
   }
   
   .glass-card {
-    @apply backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl shadow-2xl;
+    @apply backdrop-blur-sm bg-white/70 border border-white/50 rounded-2xl shadow-lg;
   }
   
   .magic-button {

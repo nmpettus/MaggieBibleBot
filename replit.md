@@ -145,3 +145,5 @@ The application is designed to be easily deployable on Replit with automatic env
 - **STYLE: Word highlighting now uses blue underline with proper offset and thickness**
 - **OPTIMIZED: Simplified timing algorithm to closely match Azure Sara's natural speech patterns**
 - **FINE-TUNED: Reduced delay to 50ms and minimized adjustments for more accurate word synchronization**
+- **UI THEME: Updated to lighter, softer theme with cream/warm backgrounds and improved text contrast**
+- **ACCESSIBILITY: Enhanced readability with better color contrast while maintaining visual appeal**
