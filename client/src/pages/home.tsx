@@ -1100,14 +1100,14 @@ export default function Home() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Enhanced Question input */}
                 <div className="relative">
-                  <div className="glass-card p-1 light-runner-border">
+                  <div className="glass-card p-1 light-runner-border shadow-2xl">
                     <Textarea
                       id="question"
                       value={question}
                       onChange={(e) => setQuestion(e.target.value)}
                       rows={3}
                       placeholder="Ask about grace, love, forgiveness, salvation, or any biblical topic..."
-                      className="w-full resize-none bg-white/60 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-xl text-gray-900 placeholder:text-gray-500 focus:bg-white/80 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50"
+                      className="w-full resize-none bg-white/60 backdrop-blur-sm border-0 rounded-xl p-4 pr-12 text-xl text-gray-900 placeholder:text-gray-500 focus:bg-white/80 transition-all duration-300 focus:ring-2 focus:ring-blue-400/50 shadow-inner"
                       disabled={askMaggieMutation.isPending}
                     />
                   </div>
@@ -1136,7 +1136,7 @@ export default function Home() {
                 {browserSupportsSpeechRecognition && (
                   <div className="mt-4 text-sm">
                     {listening ? (
-                      <div className="glass-card p-4 text-green-700 font-medium text-center">
+                      <div className="glass-card p-4 text-green-700 font-medium text-center shadow-xl">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                           🎤 Listening... Speak clearly into your microphone
@@ -1146,7 +1146,7 @@ export default function Home() {
                         </span>
                       </div>
                     ) : (
-                      <div className="glass-card p-3 text-center">
+                      <div className="glass-card p-3 text-center shadow-xl">
                         <span className="text-gray-700">
                           💡 Click the microphone to speak your question aloud
                         </span>
@@ -1157,7 +1157,7 @@ export default function Home() {
                 
                 {/* Enhanced Fallback for unsupported browsers */}
                 {!browserSupportsSpeechRecognition && (
-                  <div className="glass-card p-4 mt-4 text-sm text-gray-600 text-center">
+                  <div className="glass-card p-4 mt-4 text-sm text-gray-600 text-center shadow-xl">
                     Speech recognition not supported in this browser. Please type your question.
                   </div>
                 )}
