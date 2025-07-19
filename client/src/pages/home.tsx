@@ -1176,9 +1176,9 @@ export default function Home() {
               <div className="glass-card p-1">
                 <Card className="bg-gradient-to-br from-white/80 to-white/60 backdrop-blur-lg border-0 shadow-2xl">
                   <CardContent className="p-6 sm:p-8">
-                    <div className="flex items-start space-x-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 space-y-4 sm:space-y-0">
                       {/* Enhanced Maggie's avatar for response */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 flex justify-center sm:justify-start">
                         <div className="relative">
                           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-400 to-blue-500 p-1 pulse-glow">
                             <div className="w-full h-full rounded-full bg-white/20 backdrop-blur-sm"></div>
@@ -1191,18 +1191,18 @@ export default function Home() {
                         </div>
                       </div>
                     
-                    <div className="flex-1">
+                    <div className="flex-1 text-center sm:text-left">
                       {/* Enhanced Response header */}
-                      <div className="mb-6 flex items-center justify-between">
-                        <div>
+                      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                        <div className="text-center sm:text-left">
                           <h3 className="font-bold text-gray-800 text-2xl mb-2 gradient-text">Maggie's Biblical Perspective</h3>
-                          <p className="text-gray-600 text-sm bg-blue-100/60 px-3 py-1 rounded-full backdrop-blur-sm">Based on the New Testament covenant of Grace</p>
+                          <p className="text-gray-600 text-sm bg-blue-100/60 px-3 py-1 rounded-full backdrop-blur-sm inline-block">Based on the New Testament covenant of Grace</p>
                         </div>
                         
                         {/* Listen button with voice indicator */}
                         {speechSynthesis && (
-                          <div className="flex items-center ml-4 shrink-0">
-                            <div className="flex flex-col items-end">
+                          <div className="flex items-center justify-center sm:justify-end sm:ml-4 shrink-0">
+                            <div className="flex flex-col items-center sm:items-end">
                               <Button
                                 onClick={toggleSpeech}
                                 size="sm"
@@ -1239,7 +1239,7 @@ export default function Home() {
                       </div>
                       
                       {/* Response content with word highlighting */}
-                      <div className="prose prose-gray max-w-none">
+                      <div className="prose prose-gray max-w-none text-center sm:text-left">
                         <p className="text-foreground leading-relaxed mb-4">
                           {renderHighlightedText(response.answer)}
                         </p>
