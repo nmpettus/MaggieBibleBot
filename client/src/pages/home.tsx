@@ -386,17 +386,16 @@ export default function Home() {
 
   // Text-to-speech functions with ElevenLabs integration
   const speakText = async (text: string) => {
+    // First, completely stop any existing audio to prevent overlapping
+    stopSpeaking();
+    
+    // Wait a moment to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Prevent multiple simultaneous speech requests
     if (isSpeaking) {
       console.log('Already speaking, ignoring request');
       return;
-    }
-    
-    // Stop any current audio
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-      setCurrentAudio(null);
     }
     if (useElevenLabs && selectedVoice) {
       try {
@@ -683,22 +682,41 @@ export default function Home() {
   };
 
   const stopSpeaking = () => {
-    console.log('Stopping speech...');
+    console.log('🛑 Stopping all audio immediately...');
+    
+    // Force stop ALL HTML5 audio elements on the page
+    const allAudioElements = document.querySelectorAll('audio');
+    allAudioElements.forEach((audio, index) => {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
+        audio.load(); // Reset the audio element
+        console.log(`🛑 Stopped audio element ${index + 1}`);
+      } catch (error) {
+        console.log(`⚠️ Error stopping audio element ${index + 1}:`, error);
+      }
+    });
     
     // Stop Azure Sara or Faith voice audio if playing
     if (currentAudio) {
       try {
         currentAudio.pause();
         currentAudio.currentTime = 0;
-        // Remove event listeners to prevent further events
+        currentAudio.src = '';
+        currentAudio.load(); // Reset the audio element completely
+        // Remove ALL event listeners to prevent further events
         currentAudio.onended = null;
         currentAudio.onerror = null;
         currentAudio.onloadeddata = null;
         currentAudio.onloadedmetadata = null;
         currentAudio.oncanplaythrough = null;
-        console.log('✅ Azure Sara/Faith audio stopped successfully');
+        currentAudio.onplay = null;
+        currentAudio.onpause = null;
+        currentAudio.ontimeupdate = null;
+        console.log('✅ Current audio completely stopped and reset');
       } catch (error) {
-        console.log('⚠️ Error stopping audio:', error);
+        console.log('⚠️ Error stopping current audio:', error);
       }
       setCurrentAudio(null);
     }
@@ -714,20 +732,26 @@ export default function Home() {
       setCurrentAudioUrl(null);
     }
     
-    // Stop browser speech synthesis
+    // Stop browser speech synthesis completely
     if (speechSynthesis) {
       speechSynthesis.cancel();
-      console.log('✅ Browser TTS stopped');
+      // Force cancel multiple times to ensure it stops
+      setTimeout(() => speechSynthesis.cancel(), 100);
+      setTimeout(() => speechSynthesis.cancel(), 200);
+      console.log('✅ Browser TTS completely cancelled');
     }
     
-    // Stop all word highlighting
+    // Remove any pending click listeners that might restart audio
+    // Note: enableAudioOnClick is defined within speakText function scope
+    
+    // Stop all word highlighting immediately
     stopWordHighlighting();
     
-    // Reset all speech-related states
+    // Reset all speech-related states immediately
     setIsSpeaking(false);
     setCurrentVoiceInfo(null);
     
-    console.log('🛑 All speech stopped successfully');
+    console.log('🛑 All speech and audio completely stopped');
   };
 
   // Function to start word highlighting with precise timing
@@ -1303,41 +1327,41 @@ export default function Home() {
           {/* Enhanced Additional Info with Better Visibility */}
           <section className="text-center">
             <div className="relative">
-              {/* Dark background with enhanced contrast */}
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 to-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10"></div>
+              {/* Light background with enhanced contrast */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/90 to-blue-50/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-blue-200/30"></div>
               
               <Card className="relative bg-transparent border-0 shadow-none">
                 <CardContent className="p-8 sm:p-12">
-                  <h3 className="text-3xl font-bold text-white mb-6 drop-shadow-lg">About This Ministry Tool</h3>
-                  <p className="text-gray-100 leading-relaxed max-w-3xl mx-auto mb-8 text-lg drop-shadow-sm">
+                  <h3 className="text-3xl font-bold text-gray-800 mb-6 drop-shadow-sm">About This Ministry Tool</h3>
+                  <p className="text-gray-700 leading-relaxed max-w-3xl mx-auto mb-8 text-lg">
                     This AI-powered tool provides biblical guidance rooted in the New Testament's message of grace and God's unconditional love. 
                     All responses are crafted with care to reflect sound theological principles, featuring the authentic 
-                    <span className="font-bold text-blue-300 drop-shadow-sm"> Faith voice ✝️</span> for spiritual encouragement.
+                    <span className="font-bold text-blue-600"> Faith voice ✝️</span> for spiritual encouragement.
                   </p>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-12">
                     <div className="text-center">
-                      <div className="bg-gradient-to-br from-blue-600/90 to-blue-800/90 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-blue-400/30">
-                        <Book className="w-10 h-10 text-blue-100" />
+                      <div className="bg-gradient-to-br from-blue-500/80 to-blue-600/80 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-blue-300/50">
+                        <Book className="w-10 h-10 text-white" />
                       </div>
-                      <h4 className="font-bold text-white text-lg mb-2 drop-shadow-sm">Scripture-Based</h4>
-                      <p className="text-gray-200 drop-shadow-sm">All answers rooted in biblical truth</p>
+                      <h4 className="font-bold text-gray-800 text-lg mb-2">Scripture-Based</h4>
+                      <p className="text-gray-600">All answers rooted in biblical truth</p>
                     </div>
                     
                     <div className="text-center">
-                      <div className="bg-gradient-to-br from-pink-600/90 to-pink-800/90 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-pink-400/30">
-                        <Heart className="w-10 h-10 text-pink-100" />
+                      <div className="bg-gradient-to-br from-pink-500/80 to-pink-600/80 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-pink-300/50">
+                        <Heart className="w-10 h-10 text-white" />
                       </div>
-                      <h4 className="font-bold text-white text-lg mb-2 drop-shadow-sm">Grace-Centered</h4>
-                      <p className="text-gray-200 drop-shadow-sm">Focused on God's love and grace</p>
+                      <h4 className="font-bold text-gray-800 text-lg mb-2">Grace-Centered</h4>
+                      <p className="text-gray-600">Focused on God's love and grace</p>
                     </div>
                     
                     <div className="text-center">
-                      <div className="bg-gradient-to-br from-purple-600/90 to-purple-800/90 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-purple-400/30">
-                        <Volume2 className="w-10 h-10 text-purple-100" />
+                      <div className="bg-gradient-to-br from-purple-500/80 to-purple-600/80 backdrop-blur-sm p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-xl border border-purple-300/50">
+                        <Volume2 className="w-10 h-10 text-white" />
                       </div>
-                      <h4 className="font-bold text-white text-lg mb-2 drop-shadow-sm">Faith Voice ✝️</h4>
-                      <p className="text-gray-200 drop-shadow-sm">Authentic audio responses</p>
+                      <h4 className="font-bold text-gray-800 text-lg mb-2">Faith Voice ✝️</h4>
+                      <p className="text-gray-600">Authentic audio responses</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1350,9 +1374,9 @@ export default function Home() {
           {/* Disclaimer at bottom */}
           <footer className="mt-16 pb-8">
             <div className="glass-card p-4 max-w-4xl mx-auto">
-              <p className="text-sm text-white/70 leading-relaxed text-center">
+              <p className="text-sm text-gray-600 leading-relaxed text-center">
                 Answers are based on the New Testament covenant of Grace and God's Love as taught by 
-                <span className="font-semibold text-blue-200"> Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts</span>.
+                <span className="font-semibold text-blue-700"> Tim Keller, Andrew Farley, and other conservative evangelical pastors and experts</span>.
               </p>
             </div>
           </footer>
