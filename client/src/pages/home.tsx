@@ -671,13 +671,23 @@ export default function Home() {
         };
         
         // Enhanced click event to prioritize Sara voice
-        const enableAudioOnClick = () => {
+        let clickListenerActive = true;
+        const enableAudioOnClick = (event) => {
+          // Don't auto-play if the click was on pause/control buttons
+          if (!clickListenerActive || 
+              event.target.closest('.audio-controls') || 
+              event.target.closest('[data-audio-control]')) {
+            console.log('🎯 Ignoring click on audio controls');
+            return;
+          }
+          
           console.log(`🎯 User click detected, playing ${voiceUsed} voice immediately`);
-          if (audio && audio.paused) {
+          if (audio && audio.paused && !isPaused) { // Only play if not intentionally paused
             audio.play()
               .then(() => {
                 console.log(`✅ ${voiceUsed} started via user click!`);
                 startWordHighlightingWithRealTime(text, audio);
+                clickListenerActive = false;
                 document.body.removeEventListener('click', enableAudioOnClick);
               })
               .catch((error) => {
@@ -687,7 +697,7 @@ export default function Home() {
         };
         
         // Add click listener immediately for backup
-        document.body.addEventListener('click', enableAudioOnClick, { once: true });
+        document.body.addEventListener('click', enableAudioOnClick);
         
         // Try immediate auto-play - this often works right after user interaction
         setTimeout(() => {
@@ -1380,6 +1390,7 @@ export default function Home() {
                                   onClick={toggleSpeech}
                                   size="sm"
                                   disabled={!response}
+                                  data-audio-control="pause-resume"
                                   className={`magic-button px-4 py-2 font-semibold border-0 ${
                                     isSpeaking && !isPaused 
                                       ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 pulse-glow'
@@ -1411,6 +1422,7 @@ export default function Home() {
                                     <Button
                                       onClick={restartFromBeginning}
                                       size="sm"
+                                      data-audio-control="restart"
                                       className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-2"
                                       title="Restart from beginning"
                                     >
@@ -1420,6 +1432,7 @@ export default function Home() {
                                     <Button
                                       onClick={() => { stopSpeaking(); setIsPaused(false); setPausedWordIndex(-1); }}
                                       size="sm"
+                                      data-audio-control="stop"
                                       className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-2"
                                       title="Stop completely"
                                     >
