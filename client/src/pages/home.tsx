@@ -386,17 +386,23 @@ export default function Home() {
 
   // Text-to-speech functions with ElevenLabs integration
   const speakText = async (text: string) => {
-    // First, completely stop any existing audio to prevent overlapping
-    stopSpeaking();
-    
-    // Wait a moment to ensure cleanup is complete
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Prevent multiple simultaneous speech requests
-    if (isSpeaking) {
-      console.log('Already speaking, ignoring request');
-      return;
+    // Only stop if there's currently playing audio
+    if (currentAudio && !currentAudio.paused) {
+      console.log('🔄 Stopping current audio to start new speech...');
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
     }
+    
+    // Cancel any browser TTS
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
+    
+    // Reset states but don't prevent new audio from starting
+    setIsSpeaking(false);
+    stopWordHighlighting();
+    
+    console.log('🎤 Starting new speech request...');
     if (useElevenLabs && selectedVoice) {
       try {
         setIsSpeaking(true);
@@ -469,7 +475,8 @@ export default function Home() {
         
         // Set up proper event handlers first
         audio.onloadeddata = () => {
-          console.log(`🎵 ${voiceUsed} data loaded, starting Sara immediately...`);
+          console.log(`🎵 ${voiceUsed} data loaded, attempting immediate playback...`);
+          setIsSpeaking(true); // Set this immediately when we start
           // Force play Sara voice without waiting
           audio.play()
             .then(() => {
@@ -477,8 +484,8 @@ export default function Home() {
               startWordHighlightingWithRealTime(text, audio);
             })
             .catch((error) => {
-              console.log(`⚠️ ${voiceUsed} blocked, forcing play attempt...`);
-              // Immediately try the attempt play function instead of waiting
+              console.log(`⚠️ ${voiceUsed} blocked by browser, trying alternative approach...`);
+              // Try the attempt play function
               attemptPlay(1, true);
             });
         };
@@ -501,6 +508,7 @@ export default function Home() {
         const attemptPlay = async (attempt = 1, userTriggered = false) => {
           try {
             console.log(`🎯 ${voiceUsed} play attempt ${attempt} (user: ${userTriggered})`);
+            setIsSpeaking(true); // Ensure we're marked as speaking
             
             // For Safari, try different approaches
             if (attempt === 1 && !userTriggered) {
@@ -525,17 +533,14 @@ export default function Home() {
             startWordHighlightingWithRealTime(text, audio);
           } catch (error) {
             console.log(`❌ ${voiceUsed} attempt ${attempt} failed: ${error.message}`);
-            if (attempt < 5) {
-              // More attempts with different strategies
-              setTimeout(() => attemptPlay(attempt + 1, userTriggered), 300 * attempt);
+            if (attempt < 3) {
+              // Try a few more times
+              setTimeout(() => attemptPlay(attempt + 1, userTriggered), 200 * attempt);
             } else {
-              console.log(`⚠️ ${voiceUsed} failed all attempts - keeping audio ready for manual play`);
-              // Don't fallback to browser TTS immediately, keep Azure Sara audio ready
-              // Audio is loaded and ready, just needs user interaction
-              console.log(`🎯 ${voiceUsed} audio is ready but needs user click to play`);
-              
-              // Keep the audio element available but don't auto-fallback
-              // User can still manually click play button to hear Sara
+              console.log(`⚠️ ${voiceUsed} failed attempts - audio ready but may need user interaction`);
+              // Still mark as speaking since audio is loaded and ready
+              setIsSpeaking(true);
+              setCurrentVoiceInfo(voiceUsed);
             }
           }
         };
@@ -568,8 +573,14 @@ export default function Home() {
           setCurrentAudio(null);
           stopWordHighlighting();
           const totalTime = Date.now() - startTime;
-          console.log(`✅ Faith finished speaking (${totalTime}ms total)`);
+          console.log(`✅ ${voiceUsed} finished speaking (${totalTime}ms total)`);
           URL.revokeObjectURL(audioUrl); // Clean up memory
+        };
+        
+        audio.onerror = (error) => {
+          console.log(`❌ ${voiceUsed} audio error:`, error);
+          setIsSpeaking(false);
+          stopWordHighlighting();
         };
         
         audio.onerror = (error) => {
