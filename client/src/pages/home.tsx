@@ -475,19 +475,22 @@ export default function Home() {
         
         // Set up proper event handlers first
         audio.onloadeddata = () => {
-          console.log(`🎵 ${voiceUsed} data loaded, attempting immediate playback...`);
+          console.log(`🎵 ${voiceUsed} data loaded, force auto-play starting...`);
           setIsSpeaking(true); // Set this immediately when we start
-          // Force play Sara voice without waiting
-          audio.play()
-            .then(() => {
+          // Aggressive auto-play attempt
+          const forcePlay = async () => {
+            try {
+              // Multiple rapid attempts to start audio
+              await audio.play();
               console.log(`✅ ${voiceUsed} auto-play successful! Duration: ${audio.duration}s`);
               startWordHighlightingWithRealTime(text, audio);
-            })
-            .catch((error) => {
-              console.log(`⚠️ ${voiceUsed} blocked by browser, trying alternative approach...`);
-              // Try the attempt play function
-              attemptPlay(1, true);
-            });
+            } catch (error) {
+              console.log(`⚠️ Auto-play blocked, trying manual trigger approach...`);
+              // Set up click listener for manual start
+              enableAudioOnClick();
+            }
+          };
+          forcePlay();
         };
         
         audio.onloadedmetadata = () => {
@@ -547,24 +550,37 @@ export default function Home() {
         
         // Enhanced click event to prioritize Sara voice
         const enableAudioOnClick = () => {
-          console.log(`🎯 User interaction detected, playing ${voiceUsed} voice`);
+          console.log(`🎯 User click detected, playing ${voiceUsed} voice immediately`);
           if (audio && audio.paused) {
             audio.play()
               .then(() => {
-                console.log(`✅ ${voiceUsed} started via user interaction!`);
+                console.log(`✅ ${voiceUsed} started via user click!`);
+                startWordHighlightingWithRealTime(text, audio);
+                document.body.removeEventListener('click', enableAudioOnClick);
+              })
+              .catch((error) => {
+                console.log(`❌ ${voiceUsed} still blocked:`, error.message);
+              });
+          }
+        };
+        
+        // Add click listener immediately for backup
+        document.body.addEventListener('click', enableAudioOnClick, { once: true });
+        
+        // Try immediate auto-play - this often works right after user interaction
+        setTimeout(() => {
+          if (audio.paused) {
+            console.log('🎯 Trying delayed auto-play...');
+            audio.play()
+              .then(() => {
+                console.log('✅ Delayed auto-play successful!');
                 startWordHighlightingWithRealTime(text, audio);
               })
               .catch(() => {
-                console.log(`❌ ${voiceUsed} still blocked after user interaction`);
-                attemptPlay(1, true);
+                console.log('⚠️ Auto-play still blocked - waiting for user click');
               });
           }
-          document.body.removeEventListener('click', enableAudioOnClick);
-        };
-        document.body.addEventListener('click', enableAudioOnClick);
-        
-        // Start the first attempt immediately (might work if user gesture is recent)
-        attemptPlay();
+        }, 500);
 
 
         
@@ -581,6 +597,13 @@ export default function Home() {
           console.log(`❌ ${voiceUsed} audio error:`, error);
           setIsSpeaking(false);
           stopWordHighlighting();
+        };
+        
+        // Prevent audio interference by ensuring only one plays
+        audio.onplay = () => {
+          console.log(`🔊 ${voiceUsed} started playing - ensuring no other audio conflicts`);
+          setIsSpeaking(true);
+          setCurrentVoiceInfo(voiceUsed);
         };
         
         audio.onerror = (error) => {
