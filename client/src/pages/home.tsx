@@ -332,15 +332,24 @@ export default function Home() {
   };
 
   const pauseSpeech = () => {
+    console.log('🔍 Attempting to pause speech. Current audio:', !!currentAudio, 'Is paused:', currentAudio?.paused);
+    
     if (currentAudio && !currentAudio.paused) {
       currentAudio.pause();
       setIsPaused(true);
       setPausedWordIndex(currentWordIndex);
       console.log(`⏸️ Speech paused at word ${currentWordIndex}`);
+    } else {
+      console.log('⚠️ Cannot pause: No current audio or already paused');
+      // Force state update to ensure UI reflects correct state
+      setIsPaused(true);
+      setPausedWordIndex(currentWordIndex);
     }
   };
 
   const resumeSpeech = () => {
+    console.log('🔍 Attempting to resume speech. Current audio:', !!currentAudio, 'Is paused:', currentAudio?.paused);
+    
     if (currentAudio && currentAudio.paused && isPaused) {
       currentAudio.play()
         .then(() => {
@@ -349,7 +358,15 @@ export default function Home() {
         })
         .catch((error) => {
           console.log('Error resuming audio:', error);
+          setIsPaused(false);
         });
+    } else if (currentAudio && !currentAudio.paused) {
+      // Audio is already playing, just update state
+      setIsPaused(false);
+      console.log('▶️ Audio already playing, updated state');
+    } else {
+      console.log('⚠️ Cannot resume: No current audio available');
+      setIsPaused(false);
     }
   };
 
@@ -564,6 +581,7 @@ export default function Home() {
         // Set as current audio for cleanup
         setCurrentAudio(audio);
         setCurrentAudioUrl(audioUrl);
+        setIsPaused(false); // Reset pause state when new audio starts
         setCurrentVoiceInfo(voiceUsed);
         
         // Set up proper event handlers first
@@ -877,6 +895,8 @@ export default function Home() {
     // Reset all speech-related states immediately
     setIsSpeaking(false);
     setCurrentVoiceInfo(null);
+    setIsPaused(false);
+    setPausedWordIndex(-1);
     
     console.log('🛑 All speech and audio completely stopped');
   };
