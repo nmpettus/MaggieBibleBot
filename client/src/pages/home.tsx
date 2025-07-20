@@ -333,15 +333,26 @@ export default function Home() {
 
   const pauseSpeech = () => {
     console.log('🔍 Attempting to pause speech. Current audio:', !!currentAudio, 'Is paused:', currentAudio?.paused);
+    console.log('🔍 Current audio readyState:', currentAudio?.readyState, 'networkState:', currentAudio?.networkState);
     
     if (currentAudio && !currentAudio.paused) {
-      currentAudio.pause();
+      try {
+        currentAudio.pause();
+        setIsPaused(true);
+        setPausedWordIndex(currentWordIndex);
+        console.log(`⏸️ Speech paused successfully at word ${currentWordIndex}`);
+      } catch (error) {
+        console.log('❌ Error pausing audio:', error);
+        setIsPaused(true);
+        setPausedWordIndex(currentWordIndex);
+      }
+    } else if (currentAudio && currentAudio.paused) {
+      console.log('⚠️ Audio is already paused, updating UI state');
       setIsPaused(true);
       setPausedWordIndex(currentWordIndex);
-      console.log(`⏸️ Speech paused at word ${currentWordIndex}`);
     } else {
-      console.log('⚠️ Cannot pause: No current audio or already paused');
-      // Force state update to ensure UI reflects correct state
+      console.log('⚠️ Cannot pause: No current audio available');
+      // Still update UI to show paused state
       setIsPaused(true);
       setPausedWordIndex(currentWordIndex);
     }
@@ -704,17 +715,18 @@ export default function Home() {
           URL.revokeObjectURL(audioUrl); // Clean up memory
         };
         
-        audio.onerror = (error) => {
-          console.log(`❌ ${voiceUsed} audio error:`, error);
-          setIsSpeaking(false);
-          stopWordHighlighting();
-        };
-        
         // Prevent audio interference by ensuring only one plays
         audio.onplay = () => {
           console.log(`🔊 ${voiceUsed} started playing - ensuring no other audio conflicts`);
           setIsSpeaking(true);
           setCurrentVoiceInfo(voiceUsed);
+          setIsPaused(false); // Ensure pause state is correct when playing
+        };
+        
+        // Add pause event handler
+        audio.onpause = () => {
+          console.log(`⏸️ ${voiceUsed} paused`);
+          setIsPaused(true);
         };
         
         audio.onerror = (error) => {
@@ -722,6 +734,7 @@ export default function Home() {
           setIsSpeaking(false);
           setCurrentAudio(null);
           URL.revokeObjectURL(audioUrl);
+          stopWordHighlighting();
         };
 
         // Add load event handler
