@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff, Volume2, VolumeX, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Book, Heart, Loader2, Mic, MicOff, Volume2, VolumeX, Settings, Play, Pause, Square, SkipBack, SkipForward } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
@@ -39,6 +40,13 @@ export default function Home() {
   const [highlightTimers, setHighlightTimers] = useState<NodeJS.Timeout[]>([]);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [currentVoiceInfo, setCurrentVoiceInfo] = useState<string>("Faith Voice");
+  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [pausedWordIndex, setPausedWordIndex] = useState<number>(-1);
+  const [currentResponseText, setCurrentResponseText] = useState<string>("");
+  const [showVersePopup, setShowVersePopup] = useState<boolean>(false);
+  const [selectedVerse, setSelectedVerse] = useState<string>("");
+  const [verseText, setVerseText] = useState<string>("");
   
   // Function to render text with precise word highlighting
   const renderHighlightedText = (text: string) => {
@@ -307,8 +315,93 @@ export default function Home() {
     }
   };
 
-  // Keep track of current audio and audio URL for cleanup
-  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null);
+  // Enhanced audio control functions
+  const toggleSpeech = () => {
+    console.log('Toggle speech clicked. isSpeaking:', isSpeaking, 'isPaused:', isPaused, 'response:', response);
+    if (isSpeaking && !isPaused) {
+      pauseSpeech();
+    } else if (isPaused) {
+      resumeSpeech();
+    } else if (response) {
+      console.log('Starting Azure Sara voice for:', response.answer?.substring(0, 50) + '...');
+      setCurrentResponseText(response.answer);
+      speakText(response.answer);
+    } else {
+      console.log('No response available to speak');
+    }
+  };
+
+  const pauseSpeech = () => {
+    if (currentAudio && !currentAudio.paused) {
+      currentAudio.pause();
+      setIsPaused(true);
+      setPausedWordIndex(currentWordIndex);
+      console.log(`⏸️ Speech paused at word ${currentWordIndex}`);
+    }
+  };
+
+  const resumeSpeech = () => {
+    if (currentAudio && currentAudio.paused && isPaused) {
+      currentAudio.play()
+        .then(() => {
+          setIsPaused(false);
+          console.log(`▶️ Speech resumed from word ${pausedWordIndex}`);
+        })
+        .catch((error) => {
+          console.log('Error resuming audio:', error);
+        });
+    }
+  };
+
+  const restartFromBeginning = () => {
+    if (response?.answer) {
+      stopSpeaking();
+      setCurrentWordIndex(-1);
+      setPausedWordIndex(-1);
+      setIsPaused(false);
+      setTimeout(() => {
+        speakText(response.answer);
+      }, 100);
+    }
+  };
+
+  // Bible verse lookup function
+  const handleVerseClick = async (verse: string) => {
+    setSelectedVerse(verse);
+    setShowVersePopup(true);
+    
+    // Comprehensive verse text lookup database
+    const verseTexts: { [key: string]: string } = {
+      'Romans 8:1': 'Therefore, there is now no condemnation for those who are in Christ Jesus.',
+      'Matthew 11:28': 'Come to me, all you who are weary and burdened, and I will give you rest.',
+      'Romans 8:38-39': 'For I am convinced that neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.',
+      'John 3:16': 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.',
+      'Ephesians 2:8-9': 'For it is by grace you have been saved, through faith - and this is not from yourselves, it is the gift of God - not by works, so that no one can boast.',
+      '1 John 1:9': 'If we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness.',
+      'Romans 5:8': 'But God demonstrates his own love for us in this: While we were still sinners, Christ died for us.',
+      'Philippians 4:13': 'I can do all this through him who gives me strength.',
+      'Psalm 23:1': 'The Lord is my shepherd, I lack nothing.',
+      'John 14:6': 'Jesus answered, I am the way and the truth and the life. No one comes to the Father except through me.',
+      'Romans 6:23': 'For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord.',
+      '2 Corinthians 5:17': 'Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!',
+      'Jeremiah 29:11': 'For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.',
+      'Isaiah 41:10': 'So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you; I will uphold you with my righteous right hand.',
+      'Proverbs 3:5-6': 'Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.',
+      '1 Peter 5:7': 'Cast all your anxiety on him because he cares for you.',
+      'Matthew 5:16': 'In the same way, let your light shine before others, that they may see your good deeds and glorify your Father in heaven.',
+      'Galatians 2:20': 'I have been crucified with Christ and I no longer live, but Christ lives in me. The life I now live in the body, I live by faith in the Son of God, who loved me and gave himself for me.',
+      'Romans 12:2': 'Do not conform to the pattern of this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what God\'s will is - his good, pleasing and perfect will.',
+      'Philippians 4:19': 'And my God will meet all your needs according to the riches of his glory in Christ Jesus.',
+      '1 Corinthians 10:13': 'No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it.',
+      'Matthew 6:26': 'Look at the birds of the air; they do not sow or reap or store away in barns, and yet your heavenly Father feeds them. Are you not much more valuable than they?',
+      'Hebrews 13:5': 'Keep your lives free from the love of money and be content with what you have, because God has said, Never will I leave you; never will I forsake you.',
+      'James 1:17': 'Every good and perfect gift is from above, coming down from the Father of the heavenly lights, who does not change like shifting shadows.',
+      '1 John 4:19': 'We love because he first loved us.',
+      'Romans 15:13': 'May the God of hope fill you with all joy and peace as you trust in him, so that you may overflow with hope by the power of the Holy Spirit.'
+    };
+    
+    setVerseText(verseTexts[verse] || 'Verse text not available. Please look up this verse in your Bible.');
+  };
 
   // Browser TTS function for fallback
   const playBrowserTTS = (text: string) => {
@@ -995,19 +1088,7 @@ export default function Home() {
     console.log('✅ Word highlighting stopped completely');
   };
 
-  const toggleSpeech = () => {
-    console.log('Toggle speech clicked. isSpeaking:', isSpeaking, 'response:', response);
-    if (isSpeaking) {
-      stopSpeaking();
-      stopWordHighlighting();
-    } else if (response) {
-      console.log('Starting Azure Sara voice for:', response.answer?.substring(0, 50) + '...');
-      // Always prioritize Azure Sara voice
-      speakText(response.answer);
-    } else {
-      console.log('No response available to speak');
-    }
-  };
+
 
   // Test voice function with Rachel voice
   const testVoice = () => {
@@ -1261,28 +1342,59 @@ export default function Home() {
                         {speechSynthesis && (
                           <div className="flex items-center justify-center sm:justify-end sm:ml-4 shrink-0">
                             <div className="flex flex-col items-center sm:items-end">
-                              <Button
-                                onClick={toggleSpeech}
-                                size="sm"
-                                disabled={!response}
-                                className={`magic-button px-6 py-2 font-semibold border-0 ${
-                                  isSpeaking 
-                                    ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 pulse-glow'
-                                    : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
-                                } text-white`}
-                              >
-                                {isSpeaking ? (
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={toggleSpeech}
+                                  size="sm"
+                                  disabled={!response}
+                                  className={`magic-button px-4 py-2 font-semibold border-0 ${
+                                    isSpeaking && !isPaused 
+                                      ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 pulse-glow'
+                                      : isPaused
+                                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                                      : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                                  } text-white`}
+                                >
+                                  {isSpeaking && !isPaused ? (
+                                    <>
+                                      <Pause className="w-4 h-4 mr-1" />
+                                      Pause
+                                    </>
+                                  ) : isPaused ? (
+                                    <>
+                                      <Play className="w-4 h-4 mr-1" />
+                                      Resume
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Volume2 className="w-4 h-4 mr-1" />
+                                      Listen ✝️
+                                    </>
+                                  )}
+                                </Button>
+                                
+                                {(isSpeaking || isPaused) && (
                                   <>
-                                    <VolumeX className="w-5 h-5 mr-2" />
-                                    Stop
-                                  </>
-                                ) : (
-                                  <>
-                                    <Volume2 className="w-5 h-5 mr-2" />
-                                    Listen ✝️
+                                    <Button
+                                      onClick={restartFromBeginning}
+                                      size="sm"
+                                      className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-2"
+                                      title="Restart from beginning"
+                                    >
+                                      <SkipBack className="w-4 h-4" />
+                                    </Button>
+                                    
+                                    <Button
+                                      onClick={() => { stopSpeaking(); setIsPaused(false); setPausedWordIndex(-1); }}
+                                      size="sm"
+                                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-2"
+                                      title="Stop completely"
+                                    >
+                                      <Square className="w-4 h-4" />
+                                    </Button>
                                   </>
                                 )}
-                              </Button>
+                              </div>
                               <div className="text-xs text-gray-700 mt-1 px-3 py-1 bg-blue-100/60 rounded-md backdrop-blur-sm border border-blue-200/50">
                                 {currentVoiceInfo || 'Loading Voice...'}
                               </div>
@@ -1302,14 +1414,33 @@ export default function Home() {
                           {renderHighlightedText(response.answer)}
                         </p>
                         
-                        {/* Scripture references */}
+                        {/* Clickable Scripture references */}
                         {response.scriptureReferences && (
                           <Card className="bg-white/60 border-l-4 border-l-primary mb-4">
                             <CardContent className="p-4">
-                              <h4 className="font-semibold text-foreground text-sm mb-2">Related Scripture:</h4>
-                              <p className="text-muted-foreground text-sm italic">
-                                {response.scriptureReferences}
-                              </p>
+                              <h4 className="font-semibold text-foreground text-sm mb-2">📖 Related Scripture (click to read):</h4>
+                              <div className="text-muted-foreground text-sm">
+                                {response.scriptureReferences.split(/[\s,;]+/).map((verse, index) => {
+                                  // Check if this is a valid Bible verse reference
+                                  const versePattern = /^(1|2|3)?\s?[A-Za-z]+\s+\d+:\d+(-\d+)?$/;
+                                  if (versePattern.test(verse.trim())) {
+                                    return (
+                                      <span key={index}>
+                                        <button
+                                          onClick={() => handleVerseClick(verse.trim())}
+                                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium cursor-pointer bg-blue-50/60 px-2 py-1 rounded-md mr-2 mb-1 inline-block transition-all hover:bg-blue-100/80"
+                                          title={`Click to read ${verse.trim()}`}
+                                        >
+                                          {verse.trim()}
+                                        </button>
+                                        {index < response.scriptureReferences.split(/[\s,;]+/).length - 1 ? ' ' : ''}
+                                      </span>
+                                    );
+                                  } else {
+                                    return <span key={index} className="italic">{verse} </span>;
+                                  }
+                                })}
+                              </div>
                             </CardContent>
                           </Card>
                         )}
@@ -1357,6 +1488,33 @@ export default function Home() {
             </div>
             </section>
           )}
+
+          {/* Bible Verse Popup Dialog */}
+          <Dialog open={showVersePopup} onOpenChange={setShowVersePopup}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold text-gray-800 mb-2">
+                  📖 {selectedVerse}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="p-4">
+                <p className="text-gray-700 leading-relaxed italic text-lg mb-4">
+                  "{verseText}"
+                </p>
+                <div className="text-xs text-gray-500 border-t pt-3">
+                  Scripture text from the Bible (ESV/NIV). For complete accuracy, please consult your preferred Bible translation.
+                </div>
+                <div className="flex justify-end mt-4">
+                  <Button
+                    onClick={() => setShowVersePopup(false)}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Enhanced Additional Info with Better Visibility */}
           <section className="text-center">
