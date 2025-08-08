@@ -90,7 +90,6 @@ HOSTINGER DEPLOYMENT INSTRUCTIONS
 3. Environment Setup:
    - Edit .env file with your API keys:
      * OPENAI_API_KEY (required)
-     * ELEVENLABS_API_KEY (optional)
      * AZURE_SPEECH_KEY (optional)
 
 4. Hostinger Configuration:

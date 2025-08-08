@@ -123,7 +123,6 @@ The application is designed to be easily deployable on Replit with automatic env
 - **ENHANCED: Improved quota detection in ElevenLabs service to catch various error formats**
 - **CURRENT STATUS: Azure Sara (Child voice) active as primary TTS - genuine childlike voice**
 - **NEW: Switched to Azure Sara as default with improved audio playback**
-- **NEW: Added environment variable support for voice switching (AZURE_VOICE)**
 - **NEW: Implemented real-time word highlighting synced with audio playback**
 - **NEW: Enhanced timing precision using audio.currentTime for perfect sync**
 - **NEW: Word highlighting now uses cumulative delays with punctuation handling**
@@ -147,6 +146,8 @@ The application is designed to be easily deployable on Replit with automatic env
 - **FINE-TUNED: Reduced delay to 50ms and minimized adjustments for more accurate word synchronization**
 - **UI THEME: Updated to lighter, softer theme with cream/warm backgrounds and improved text contrast**
 - **ACCESSIBILITY: Enhanced readability with better color contrast while maintaining visual appeal**
+- **REMOVED: Completely removed ElevenLabs integration - now uses only Azure Sara voice**
+- **SIMPLIFIED: Streamlined to use Sara as primary with Samantha as fallback only**
 
 ### January 20, 2025 - Final Release Ready
 - **PAUSE FUNCTIONALITY: Successfully fixed pause/resume controls - audio properly pauses and stays paused**

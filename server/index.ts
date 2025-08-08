@@ -69,7 +69,6 @@ app.use((req, res, next) => {
     log(`Maggie Bible Q&A app serving on port ${port}`);
     log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     log(`OpenAI API: ${process.env.OPENAI_API_KEY ? 'configured' : 'missing'}`);
-    log(`ElevenLabs API: ${process.env.ELEVENLABS_API_KEY ? 'configured' : 'not configured'}`);
     log(`Azure Speech: ${process.env.AZURE_SPEECH_KEY ? 'configured' : 'not configured'}`);
   });
 })();

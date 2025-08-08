@@ -4,8 +4,7 @@
 
 1. **Hostinger Account** with Node.js hosting support
 2. **OpenAI API Key** (required for biblical responses)
-3. **Optional**: ElevenLabs API Key for premium Faith voice
-4. **Optional**: Azure Speech Service for child voice fallback
+3. **Optional**: Azure Speech Service for child voice
 
 ## Step 1: Prepare Your Environment
 
@@ -19,7 +18,6 @@ cp .env.example .env
 Edit `.env` with your actual API keys:
 ```
 OPENAI_API_KEY=sk-your-openai-key-here
-ELEVENLABS_API_KEY=your-elevenlabs-key-here
 AZURE_SPEECH_KEY=your-azure-key-here
 AZURE_SPEECH_REGION=eastus
 NODE_ENV=production
@@ -90,7 +88,6 @@ In Hostinger control panel:
 1. Go to **Node.js** section
 2. Add environment variables:
    - `OPENAI_API_KEY`: Your OpenAI API key
-   - `ELEVENLABS_API_KEY`: Your ElevenLabs key (optional)
    - `AZURE_SPEECH_KEY`: Your Azure key (optional)
    - `NODE_ENV`: production
    - `PORT`: 3000 (or as assigned by Hostinger)
@@ -137,12 +134,11 @@ npm start
 1. Visit your domain/subdomain
 2. Ask a biblical question
 3. Verify AI response works
-4. Test voice features (if API keys provided)
+4. Test Azure Sara voice features
 
 ### 7.2 Voice Features Test
 1. Test microphone input
 2. Test Azure Sara voice output
-3. Test ElevenLabs Faith voice (if configured)
 
 ## Troubleshooting
 
