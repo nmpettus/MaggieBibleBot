@@ -53,7 +53,7 @@ const BIBLE_VERSES = [
   { reference: "Ephesians 6:10", text: "Finally, be strong in the Lord and in his mighty power." },
   { reference: "Psalm 121:1-2", text: "I lift up my eyes to the mountains—where does my help come from? My help comes from the Lord, the Maker of heaven and earth." },
   { reference: "John 15:13", text: "Greater love has no one than this: to lay down one's life for one's friends." },
-  { reference: "1 Corinthians 10:13", text: "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it." }
+  { reference: "1 Corinthians 10:13", text: "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it." },
   // Additional common verses that might appear in responses
   { reference: "1 John 4:8", text: "Whoever does not love does not know God, because God is love." },
   { reference: "1 John 4:16", text: "And so we know and rely on the love God has for us. God is love. Whoever lives in love lives in God, and God in them." },
