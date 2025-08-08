@@ -136,6 +136,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // First, try ElevenLabs Faith voice
       try {
+        // Skip ElevenLabs if not configured
+        if (!process.env.ELEVENLABS_API_KEY || 
+            process.env.ELEVENLABS_API_KEY.trim() === '' || 
+            process.env.ELEVENLABS_API_KEY === 'your_elevenlabs_api_key_here') {
+          console.log(`⚠️ ElevenLabs not configured - skipping to Azure TTS`);
+          throw new Error('ELEVENLABS_NOT_CONFIGURED');
+        }
+        
         const selectedVoiceId = voiceId || "bIQlQ61Q7WgbyZAL7IWj";
         console.log(`🎤 Attempting Faith voice (ElevenLabs): ${selectedVoiceId}`);
         
@@ -159,9 +167,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
         }
         
-        // If ElevenLabs fails, try Azure TTS as premium fallback
+        // Try Azure TTS as primary service (since ElevenLabs not configured)
         try {
-          console.log(`🔊 Falling back to Azure TTS genuine child voice`);
+          console.log(`🔊 Using Azure TTS genuine child voice`);
           
           // Allow voice switching via environment variable (default: Sara)
           const azureVoice = process.env.AZURE_VOICE || 'en-US-SaraNeural';
