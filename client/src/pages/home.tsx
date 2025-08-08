@@ -54,6 +54,19 @@ const BIBLE_VERSES = [
   { reference: "Psalm 121:1-2", text: "I lift up my eyes to the mountains—where does my help come from? My help comes from the Lord, the Maker of heaven and earth." },
   { reference: "John 15:13", text: "Greater love has no one than this: to lay down one's life for one's friends." },
   { reference: "1 Corinthians 10:13", text: "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it." }
+  // Additional common verses that might appear in responses
+  { reference: "1 John 4:8", text: "Whoever does not love does not know God, because God is love." },
+  { reference: "1 John 4:16", text: "And so we know and rely on the love God has for us. God is love. Whoever lives in love lives in God, and God in them." },
+  { reference: "Genesis 1:1", text: "In the beginning God created the heavens and the earth." },
+  { reference: "Psalm 23", text: "The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures, he leads me beside quiet waters, he refreshes my soul. He guides me along the right paths for his name's sake." },
+  { reference: "Matthew 22:37-39", text: "Jesus replied: 'Love the Lord your God with all your heart and with all your soul and with all your mind.' This is the first and greatest commandment. And the second is like it: 'Love your neighbor as yourself.'" },
+  { reference: "John 1:1", text: "In the beginning was the Word, and the Word was with God, and the Word was God." },
+  { reference: "Romans 3:23", text: "For all have sinned and fall short of the glory of God." },
+  { reference: "Acts 16:31", text: "They replied, 'Believe in the Lord Jesus, and you will be saved—you and your household.'" },
+  { reference: "Ephesians 4:32", text: "Be kind and compassionate to one another, forgiving each other, just as in Christ God forgave you." },
+  { reference: "Philippians 4:19", text: "And my God will meet all your needs according to the riches of his glory in Christ Jesus." },
+  { reference: "1 Timothy 2:5", text: "For there is one God and one mediator between God and mankind, the man Christ Jesus." },
+  { reference: "Revelation 21:4", text: "He will wipe every tear from their eyes. There will be no more death or mourning or crying or pain, for the old order of things has passed away." }
 ];
 
 interface BiblicalResponse {
@@ -312,8 +325,6 @@ export default function Home() {
 
   const startWordHighlighting = (textWords: string[], audio: HTMLAudioElement) => {
     console.log('🎯 Starting word highlighting for', textWords.length, 'words');
-    console.log('🎯 First few words:', textWords.slice(0, 5));
-    console.log('🎯 Last few words:', textWords.slice(-5));
     
     clearHighlightTimeouts();
     setCurrentWordIndex(-1);
@@ -327,35 +338,33 @@ export default function Home() {
     
     console.log(`⏱️ Audio duration: ${duration}s, calculating timing...`);
     
-    // Calculate timing based on actual audio duration
+    // Calculate timing based on actual audio duration with better sync
     const totalWords = textWords.length;
-    // Add 10% buffer to ensure we don't run out of time before audio ends
-    const timePerWord = (duration * 0.9) / totalWords * 1000; // milliseconds per word
+    // Use 95% of duration to ensure we don't run out of time
+    const timePerWord = (duration * 0.95) / totalWords * 1000; // milliseconds per word
     
     console.log(`⏱️ Time per word: ${timePerWord}ms`);
     
+    // Start highlighting immediately with first word
+    setTimeout(() => {
+      if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+        setCurrentWordIndex(0);
+      }
+    }, 100); // Small delay to ensure audio has started
+    
     textWords.forEach((word, index) => {
-      const delay = index * timePerWord;
+      if (index === 0) return; // Skip first word as it's handled above
+      
+      const delay = index * timePerWord + 100; // Add initial delay offset
       
       const timeout = setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
-          console.log(`🔤 Highlighting word ${index}: "${word}"`);
           setCurrentWordIndex(index);
         }
       }, delay);
       
       highlightTimeoutRef.current.push(timeout);
     });
-    
-    // Add a final timeout to ensure we highlight the last word
-    const finalTimeout = setTimeout(() => {
-      if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
-        console.log('🏁 Ensuring final word is highlighted');
-        setCurrentWordIndex(textWords.length - 1);
-      }
-    }, duration * 900); // 90% of audio duration
-    
-    highlightTimeoutRef.current.push(finalTimeout);
   };
   
   const resumeWordHighlighting = (textWords: string[], audio: HTMLAudioElement) => {
@@ -376,7 +385,7 @@ export default function Home() {
     
     // Calculate which word we should be at based on current time
     const totalWords = textWords.length;
-    const timePerWord = duration / totalWords;
+    const timePerWord = (duration * 0.95) / totalWords; // Match the original timing
     const currentWordIndex = Math.floor(currentTime / timePerWord);
     
     console.log(`🎯 Should be at word ${currentWordIndex} when resuming`);
@@ -388,13 +397,12 @@ export default function Home() {
     
     // Schedule remaining words
     for (let index = currentWordIndex + 1; index < totalWords; index++) {
-      const wordTime = index * timePerWord;
+      const wordTime = (index * timePerWord) + 0.1; // Add small offset to match original
       const delay = (wordTime - currentTime) * 1000; // Convert to milliseconds
       
       if (delay > 0) {
         const timeout = setTimeout(() => {
           if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
-            console.log(`🔤 Highlighting word ${index}: "${textWords[index]}"`);
             setCurrentWordIndex(index);
           }
         }, delay);
@@ -440,16 +448,24 @@ export default function Home() {
   const highlightWithEstimatedTiming = (textWords: string[]) => {
     console.log('🎯 Using estimated timing for highlighting');
     
-    // Sara speaks at about 150-180 words per minute
-    const wordsPerMinute = 160;
+    // Sara speaks at about 140-160 words per minute (more conservative)
+    const wordsPerMinute = 150;
     const msPerWord = (60 * 1000) / wordsPerMinute;
     
+    // Start with first word immediately
+    setTimeout(() => {
+      if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+        setCurrentWordIndex(0);
+      }
+    }, 200);
+    
     textWords.forEach((word, index) => {
-      const delay = index * msPerWord;
+      if (index === 0) return; // Skip first word
+      
+      const delay = (index * msPerWord) + 200; // Add initial delay
       
       const timeout = setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
-          console.log(`🔤 Highlighting word ${index} (estimated): "${word}"`);
           setCurrentWordIndex(index);
         }
       }, delay);
@@ -541,61 +557,73 @@ export default function Home() {
   };
 
   const renderAnswerWithVerseLinks = (text: string) => {
-    // Enhanced pattern to catch more Bible verse formats
-    const versePattern = /\b(\d?\s?[A-Za-z]+\.?\s+\d+:\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/g;
+    // Enhanced pattern to catch ALL Bible verse formats
+    const versePattern = /\b(\d?\s?[A-Za-z]+\.?\s+\d+(?::\d+)?(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/g;
     const parts = text.split(versePattern);
     
     return parts.map((part, index) => {
-      // Clean up the reference for matching
-      const cleanPart = part.trim().replace(/\.$/, '');
+      // Clean up the reference for matching - handle more variations
+      const cleanPart = part.trim().replace(/[.,;]$/, '').replace(/\s+/g, ' ');
       
-      // Try to find exact match first
-      const matchingVerse = BIBLE_VERSES.find(verse => 
-        verse.reference.toLowerCase() === cleanPart.toLowerCase()
-      );
+      // Check if this looks like a Bible reference
+      const looksLikeBibleRef = /\b[A-Za-z]+\.?\s+\d+/.test(cleanPart);
       
-      // If no exact match, try partial matching
-      const partialMatch = !matchingVerse ? BIBLE_VERSES.find(verse => {
-        const verseRef = verse.reference.toLowerCase();
-        const partRef = cleanPart.toLowerCase();
-        
-        // Handle common variations
-        return verseRef.includes(partRef) || 
-               partRef.includes(verseRef) ||
-               verseRef.replace(/\s+/g, '').includes(partRef.replace(/\s+/g, '')) ||
-               partRef.replace(/\s+/g, '').includes(verseRef.replace(/\s+/g, ''))
-      }) : null;
-      
-      const foundVerse = matchingVerse || partialMatch;
-      
-      // Check if this looks like a Bible reference (has book name and chapter:verse)
-      const looksLikeBibleRef = /\b[A-Za-z]+\.?\s+\d+:\d+/.test(cleanPart);
-      
-      if (foundVerse) {
-        return (
-          <button
-            key={index}
-            onClick={() => setSelectedVerse(foundVerse)}
-            className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
-            title={`Click to read ${foundVerse.reference}`}
-          >
-            {part}
-          </button>
+      if (looksLikeBibleRef) {
+        // Try to find exact match first
+        const matchingVerse = BIBLE_VERSES.find(verse => 
+          verse.reference.toLowerCase() === cleanPart.toLowerCase()
         );
-      } else if (looksLikeBibleRef) {
-        // Even if we don't have the verse text, make it look like a reference
+        
+        // If no exact match, try partial matching
+        const partialMatch = !matchingVerse ? BIBLE_VERSES.find(verse => {
+          const verseRef = verse.reference.toLowerCase();
+          const partRef = cleanPart.toLowerCase();
+          
+          // Handle common variations
+          return verseRef.includes(partRef) || 
+                 partRef.includes(verseRef) ||
+                 verseRef.replace(/\s+/g, '').includes(partRef.replace(/\s+/g, '')) ||
+                 partRef.replace(/\s+/g, '').includes(verseRef.replace(/\s+/g, ''))
+        }) : null;
+        
+        const foundVerse = matchingVerse || partialMatch;
+        
+        if (foundVerse) {
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedVerse(foundVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to read ${foundVerse.reference}`}
+            >
+              {part}
+            </button>
+          );
+        } else {
+          // Create a generic verse for unknown references
+          const genericVerse = {
+            reference: cleanPart,
+            text: `This is a reference to ${cleanPart}. Please look this verse up in your Bible to read the full text.`
+          };
+          
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedVerse(genericVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to see ${cleanPart}`}
+            >
+              {part}
+            </button>
+          );
+        }
+      } else {
         return (
-          <span
-            key={index}
-            className="text-blue-600 font-medium cursor-help"
-            title="Bible verse reference"
-          >
+          <span key={index}>
             {part}
           </span>
         );
       }
-      
-      return <span key={index}>{part}</span>;
     });
   };
 
@@ -604,7 +632,7 @@ export default function Home() {
     const refs = references.split(/[,;]|\sand\s/).map(ref => ref.trim()).filter(ref => ref.length > 0);
     
     return refs.map((ref, index) => {
-      const cleanRef = ref.replace(/\.$/, '').trim();
+      const cleanRef = ref.replace(/[.,;]$/, '').trim();
       
       // Try to find exact match first
       const matchingVerse = BIBLE_VERSES.find(verse => 
@@ -624,9 +652,9 @@ export default function Home() {
       
       const foundVerse = matchingVerse || partialMatch;
       
-      return (
-        <span key={index}>
-          {foundVerse ? (
+      if (foundVerse) {
+        return (
+          <span key={index}>
             <button
               onClick={() => setSelectedVerse(foundVerse)}
               className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
@@ -634,12 +662,29 @@ export default function Home() {
             >
               {ref}
             </button>
-          ) : (
-            <span className="text-blue-600 font-medium">{ref}</span>
-          )}
-          {index < refs.length - 1 && <span className="text-blue-700">, </span>}
-        </span>
-      );
+            {index < refs.length - 1 && <span className="text-blue-700">, </span>}
+          </span>
+        );
+      } else {
+        // Create a generic verse for unknown references
+        const genericVerse = {
+          reference: cleanRef,
+          text: `This is a reference to ${cleanRef}. Please look this verse up in your Bible to read the full text.`
+        };
+        
+        return (
+          <span key={index}>
+            <button
+              onClick={() => setSelectedVerse(genericVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to see ${cleanRef}`}
+            >
+              {ref}
+            </button>
+            {index < refs.length - 1 && <span className="text-blue-700">, </span>}
+          </span>
+        );
+      }
     });
   };
 
