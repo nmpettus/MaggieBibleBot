@@ -340,22 +340,22 @@ export default function Home() {
     
     // Calculate timing based on actual audio duration with better sync
     const totalWords = textWords.length;
-    // Use 95% of duration to ensure we don't run out of time
-    const timePerWord = (duration * 0.95) / totalWords * 1000; // milliseconds per word
+    // Use 90% of duration and add delay to sync with Sara's actual speech
+    const timePerWord = (duration * 0.90) / totalWords * 1000; // milliseconds per word
     
     console.log(`⏱️ Time per word: ${timePerWord}ms`);
     
-    // Start highlighting immediately with first word
+    // Start highlighting with delay to sync with Sara's speech
     setTimeout(() => {
       if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
         setCurrentWordIndex(0);
       }
-    }, 100); // Small delay to ensure audio has started
+    }, 800); // Longer delay to sync with Sara's speech start
     
     textWords.forEach((word, index) => {
       if (index === 0) return; // Skip first word as it's handled above
       
-      const delay = index * timePerWord + 100; // Add initial delay offset
+      const delay = index * timePerWord + 800; // Add initial delay offset to match speech
       
       const timeout = setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
@@ -385,8 +385,10 @@ export default function Home() {
     
     // Calculate which word we should be at based on current time
     const totalWords = textWords.length;
-    const timePerWord = (duration * 0.95) / totalWords; // Match the original timing
-    const currentWordIndex = Math.floor(currentTime / timePerWord);
+    const timePerWord = (duration * 0.90) / totalWords; // Match the original timing
+    // Account for the initial 800ms delay when calculating current word
+    const adjustedTime = Math.max(0, currentTime - 0.8); // Subtract initial delay
+    const currentWordIndex = Math.floor(adjustedTime / timePerWord);
     
     console.log(`🎯 Should be at word ${currentWordIndex} when resuming`);
     
@@ -397,7 +399,7 @@ export default function Home() {
     
     // Schedule remaining words
     for (let index = currentWordIndex + 1; index < totalWords; index++) {
-      const wordTime = (index * timePerWord) + 0.1; // Add small offset to match original
+      const wordTime = (index * timePerWord) + 0.8; // Add initial delay offset
       const delay = (wordTime - currentTime) * 1000; // Convert to milliseconds
       
       if (delay > 0) {
@@ -415,10 +417,12 @@ export default function Home() {
   const resumeWithEstimatedTiming = (textWords: string[], currentTime: number) => {
     console.log('🎯 Using estimated timing for resume highlighting');
     
-    // Sara speaks at about 160 words per minute
-    const wordsPerMinute = 160;
+    // Sara speaks at about 135 words per minute
+    const wordsPerMinute = 135;
     const secondsPerWord = 60 / wordsPerMinute;
-    const currentWordIndex = Math.floor(currentTime / secondsPerWord);
+    // Account for the initial 800ms delay
+    const adjustedTime = Math.max(0, currentTime - 0.8);
+    const currentWordIndex = Math.floor(adjustedTime / secondsPerWord);
     
     console.log(`🎯 Estimated current word: ${currentWordIndex}`);
     
@@ -429,7 +433,7 @@ export default function Home() {
     
     // Schedule remaining words
     for (let index = currentWordIndex + 1; index < textWords.length; index++) {
-      const wordTime = index * secondsPerWord;
+      const wordTime = (index * secondsPerWord) + 0.8; // Add initial delay
       const delay = (wordTime - currentTime) * 1000;
       
       if (delay > 0) {
@@ -448,21 +452,21 @@ export default function Home() {
   const highlightWithEstimatedTiming = (textWords: string[]) => {
     console.log('🎯 Using estimated timing for highlighting');
     
-    // Sara speaks at about 140-160 words per minute (more conservative)
-    const wordsPerMinute = 150;
+    // Sara speaks at about 130-140 words per minute (more conservative for sync)
+    const wordsPerMinute = 135;
     const msPerWord = (60 * 1000) / wordsPerMinute;
     
-    // Start with first word immediately
+    // Start with first word after delay to sync with speech
     setTimeout(() => {
       if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
         setCurrentWordIndex(0);
       }
-    }, 200);
+    }, 800);
     
     textWords.forEach((word, index) => {
       if (index === 0) return; // Skip first word
       
-      const delay = (index * msPerWord) + 200; // Add initial delay
+      const delay = (index * msPerWord) + 800; // Add initial delay to match speech
       
       const timeout = setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
