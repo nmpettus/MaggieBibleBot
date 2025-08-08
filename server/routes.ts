@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertQuestionSchema } from "@shared/schema";
 import { askMaggieBibleQuestion } from "./services/openai";
-import { generateSpeechElevenLabs, getAvailableVoices, CARTOON_VOICES } from "./services/elevenlabs";
 import { generateSpeechGoogleTTS, getGoogleTTSVoices } from "./services/googleTTS";
 import { generateSpeechAzureTTS, getAzureTTSVoices } from "./services/azureTTS";
 
@@ -58,32 +57,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get ElevenLabs cartoon voices for Maggie with Faith as priority
-  app.get("/api/cartoon-voices", async (req, res) => {
-    try {
-      const voices = await getAvailableVoices();
-      
-      // Filter for child-friendly and cartoon voices including Faith
-      const cartoonVoices = voices.filter(voice => 
-        voice.category === 'generated' || 
-        voice.name.toLowerCase().includes('child') ||
-        voice.name.toLowerCase().includes('young') ||
-        voice.name.toLowerCase().includes('faith') ||
-        voice.labels?.age === 'young' ||
-        voice.labels?.gender === 'female'
-      ).slice(0, 10);
-
-      // Combine with our curated list (Faith first)
-      const allVoices = [...CARTOON_VOICES, ...cartoonVoices];
-
-      res.json({ voices: allVoices });
-    } catch (error) {
-      console.error("Error fetching cartoon voices:", error);
-      // Fallback to curated list with Faith
-      res.json({ voices: CARTOON_VOICES });
-    }
-  });
-
   // Get available Azure childlike voices for testing
   app.get("/api/azure-voices", async (req, res) => {
     try {
@@ -134,107 +107,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Text is required" });
       }
 
-      // First, try ElevenLabs Faith voice
+      // Use Azure TTS as primary service
       try {
-        // Skip ElevenLabs if not configured
-       if (!process.env.ELEVENLABS_API_KEY || 
-           process.env.ELEVENLABS_API_KEY.trim() === '' || 
-           process.env.ELEVENLABS_API_KEY === 'your_elevenlabs_api_key_here' ||
-           process.env.ELEVENLABS_API_KEY.startsWith('#')) {
-          console.log(`⚠️ ElevenLabs not configured - skipping to Azure TTS`);
-          throw new Error('ELEVENLABS_NOT_CONFIGURED');
-        }
+        console.log(`🔊 Using Azure TTS genuine child voice`);
         
-        const selectedVoiceId = voiceId || "bIQlQ61Q7WgbyZAL7IWj";
-        console.log(`🎤 Attempting Faith voice (ElevenLabs): ${selectedVoiceId}`);
+        // Always use Sara voice
+        const azureVoice = 'en-US-SaraNeural';
+        const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
         
-        const audioBuffer = await generateSpeechElevenLabs(text, selectedVoiceId);
+        console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
         
         // Set appropriate headers for audio response
         res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Length', audioBuffer.byteLength.toString());
+        res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
         res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.setHeader('X-Voice-Used', 'Faith');
+        res.setHeader('X-Voice-Used', 'Azure Sara');
         
-        console.log(`✅ Faith voice succeeded: ${audioBuffer.byteLength} bytes`);
-        console.log(`🎯 Setting voice header: Faith`);
-        return res.send(Buffer.from(audioBuffer));
+        console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
+        console.log(`🎯 Setting voice header: Azure Sara`);
+        return res.send(azureAudioBuffer);
         
-      } catch (elevenLabsError) {
-        if (elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED' || 
-            elevenLabsError.message === 'ELEVENLABS_INVALID_KEY') {
-          console.log(`⚠️ ElevenLabs not configured - skipping to Azure fallback`);
+      } catch (azureError) {
+        if (azureError.message === 'AZURE_NOT_CONFIGURED' || 
+            azureError.message === 'AZURE_INVALID_REGION') {
+          console.log(`⚠️ Azure TTS not configured`);
         } else {
-          console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
+          console.log(`⚠️ Azure TTS failed: ${azureError.message}`);
         }
         
-        // Try Azure TTS as primary service (since ElevenLabs not configured)
-        try {
-          console.log(`🔊 Using Azure TTS genuine child voice`);
-          
-          // Allow voice switching via environment variable (default: Sara)
-          const azureVoice = 'en-US-SaraNeural'; // Always use Sara voice
-          const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
-          
-          // Extract voice name for display
-          const voiceName = azureVoice.includes('Sara') ? 'Sara' : 
-                           azureVoice.includes('Aria') ? 'Aria' :
-                           azureVoice.includes('Ana') ? 'Ana' :
-                           azureVoice.includes('Emma') ? 'Emma' :
-                           azureVoice.includes('Jenny') ? 'Jenny' : 'Sara';
-          
-          console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
-          
-          // Set appropriate headers for audio response
-          res.setHeader('Content-Type', 'audio/mpeg');
-          res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
-          res.setHeader('Cache-Control', 'public, max-age=3600');
-          res.setHeader('X-Voice-Used', `Azure ${voiceName}`);
-          
-          console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
-          console.log(`🎯 Setting voice header: Azure ${voiceName}`);
-          console.log(`📋 Response headers before send:`, res.getHeaders());
-          return res.send(azureAudioBuffer);
-          
-        } catch (azureError) {
-          if (azureError.message === 'AZURE_NOT_CONFIGURED' || 
-              azureError.message === 'AZURE_INVALID_REGION') {
-            console.log(`⚠️ Azure TTS not configured - both premium services unavailable`);
-          } else {
-            console.log(`⚠️ Azure TTS also failed: ${azureError.message}`);
-          }
-          
-          // Both premium services failed - return error
-          const elevenLabsMsg = elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED' ? 'Not configured' : 
-                               elevenLabsError.message === 'ELEVENLABS_INVALID_KEY' ? 'Invalid API key' : 
-                               elevenLabsError.message;
-          const azureMsg = azureError.message === 'AZURE_NOT_CONFIGURED' ? 'Not configured' : 
-                          azureError.message === 'AZURE_INVALID_REGION' ? 'Invalid region' : 
-                          azureError.message;
-          throw new Error(`Both premium TTS services failed: ${elevenLabsMsg}, ${azureMsg}`);
-        }
+        const azureMsg = azureError.message === 'AZURE_NOT_CONFIGURED' ? 'Not configured' : 
+                        azureError.message === 'AZURE_INVALID_REGION' ? 'Invalid region' : 
+                        azureError.message;
+        throw new Error(`Azure TTS service failed: ${azureMsg}`);
       }
       
     } catch (error) {
       console.error("Error generating speech:", error);
       
       // Handle specific errors
-      if (error.message === 'QUOTA_EXCEEDED') {
-        res.status(429).json({ 
-          message: "Faith voice quota exceeded. Using enhanced browser voice.",
-          quotaExceeded: true
-        });
-      } else if (error.message.includes('Not configured') || 
-                 error.message.includes('Invalid API key') || 
+      if (error.message.includes('Not configured') || 
                  error.message.includes('Invalid region')) {
         res.status(500).json({ 
-          message: "Premium voice services need proper configuration. Using enhanced browser voice.",
+          message: "Azure voice service needs proper configuration. Using enhanced browser voice.",
           fallback: true,
           needsSetup: true
         });
       } else {
         res.status(500).json({ 
-          message: "Premium voice services temporarily unavailable. Using enhanced browser voice.",
+          message: "Azure voice service temporarily unavailable. Using enhanced browser voice.",
           fallback: true 
         });
       }
