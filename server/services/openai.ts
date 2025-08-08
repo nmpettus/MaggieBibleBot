@@ -17,14 +17,7 @@ export async function askMaggieBibleQuestion(question: string): Promise<Biblical
 
 Please respond to this biblical question with warmth, wisdom, and biblical accuracy: "${question}"
 
-Guidelines for your response:
 - Focus on grace, love, and the finished work of Christ
-- Draw from New Testament teachings
-- Be encouraging and pastoral in tone
-- Include relevant scripture references
-- Avoid legalism and condemnation
-- Emphasize God's unconditional love and grace
-- Keep responses accessible and practical
 - Include age-appropriate website recommendations for further study
 
 Please respond in JSON format with the following structure:
