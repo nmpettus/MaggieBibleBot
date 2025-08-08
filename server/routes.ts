@@ -152,7 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(Buffer.from(audioBuffer));
         
       } catch (elevenLabsError) {
-        if (elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED') {
+        if (elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED' || 
+            elevenLabsError.message === 'ELEVENLABS_INVALID_KEY') {
           console.log(`⚠️ ElevenLabs not configured - skipping to Azure fallback`);
         } else {
           console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
@@ -187,15 +188,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.send(azureAudioBuffer);
           
         } catch (azureError) {
-          if (azureError.message === 'AZURE_NOT_CONFIGURED') {
+          if (azureError.message === 'AZURE_NOT_CONFIGURED' || 
+              azureError.message === 'AZURE_INVALID_REGION') {
             console.log(`⚠️ Azure TTS not configured - both premium services unavailable`);
           } else {
             console.log(`⚠️ Azure TTS also failed: ${azureError.message}`);
           }
           
           // Both premium services failed - return error
-          const elevenLabsMsg = elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED' ? 'Not configured' : elevenLabsError.message;
-          const azureMsg = azureError.message === 'AZURE_NOT_CONFIGURED' ? 'Not configured' : azureError.message;
+          const elevenLabsMsg = elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED' ? 'Not configured' : 
+                               elevenLabsError.message === 'ELEVENLABS_INVALID_KEY' ? 'Invalid API key' : 
+                               elevenLabsError.message;
+          const azureMsg = azureError.message === 'AZURE_NOT_CONFIGURED' ? 'Not configured' : 
+                          azureError.message === 'AZURE_INVALID_REGION' ? 'Invalid region' : 
+                          azureError.message;
           throw new Error(`Both premium TTS services failed: ${elevenLabsMsg}, ${azureMsg}`);
         }
       }
@@ -209,9 +215,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Faith voice quota exceeded. Using enhanced browser voice.",
           quotaExceeded: true
         });
-      } else if (error.message.includes('Not configured')) {
+      } else if (error.message.includes('Not configured') || 
+                 error.message.includes('Invalid API key') || 
+                 error.message.includes('Invalid region')) {
         res.status(500).json({ 
-          message: "Premium voice services need setup. Using enhanced browser voice.",
+          message: "Premium voice services need proper configuration. Using enhanced browser voice.",
           fallback: true,
           needsSetup: true
         });

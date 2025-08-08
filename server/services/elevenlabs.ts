@@ -22,7 +22,7 @@ export async function generateSpeechElevenLabs(
   try {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     
-    if (!apiKey || apiKey.trim() === '') {
+    if (!apiKey || apiKey.trim() === '' || apiKey === 'your_elevenlabs_api_key_here') {
       console.log('⚠️ ElevenLabs API key not configured - skipping Faith voice');
       throw new Error('ELEVENLABS_NOT_CONFIGURED');
     }
@@ -49,6 +49,12 @@ export async function generateSpeechElevenLabs(
       const errorText = await response.text();
       console.log('ElevenLabs API error details:', errorText);
       
+      // Handle 401 Unauthorized specifically
+      if (response.status === 401) {
+        console.log('⚠️ ElevenLabs API key is invalid or expired');
+        throw new Error('ELEVENLABS_INVALID_KEY');
+      }
+      
       // Check if it's a quota issue - can be various status codes
       if (errorText.includes('quota_exceeded') || errorText.includes('credits remaining')) {
         throw new Error('QUOTA_EXCEEDED');
@@ -61,7 +67,12 @@ export async function generateSpeechElevenLabs(
     return arrayBuffer;
   } catch (error) {
     console.error('ElevenLabs TTS error:', error);
-    throw new Error('Failed to generate speech with ElevenLabs');
+    
+    if (error.message === 'ELEVENLABS_NOT_CONFIGURED' || error.message === 'ELEVENLABS_INVALID_KEY') {
+      throw error;
+    }
+    
+    throw new Error('ELEVENLABS_SERVICE_ERROR');
   }
 }
 
