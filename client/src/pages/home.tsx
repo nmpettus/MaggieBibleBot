@@ -604,22 +604,8 @@ export default function Home() {
             </button>
           );
         } else {
-          // Create a generic verse for unknown references
-          const genericVerse = {
-            reference: cleanPart,
-            text: `This is a reference to ${cleanPart}. Please look this verse up in your Bible to read the full text.`
-          };
-          
-          return (
-            <button
-              key={index}
-              onClick={() => setSelectedVerse(genericVerse)}
-              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
-              title={`Click to see ${cleanPart}`}
-            >
-              {part}
-            </button>
-          );
+          // Return as regular text if no verse found
+          return <span key={index}>{part}</span>;
         }
       } else {
         return (
@@ -670,21 +656,10 @@ export default function Home() {
           </span>
         );
       } else {
-        // Create a generic verse for unknown references
-        const genericVerse = {
-          reference: cleanRef,
-          text: `This is a reference to ${cleanRef}. Please look this verse up in your Bible to read the full text.`
-        };
-        
+        // Return as regular text if no verse found
         return (
           <span key={index}>
-            <button
-              onClick={() => setSelectedVerse(genericVerse)}
-              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
-              title={`Click to see ${cleanRef}`}
-            >
-              {ref}
-            </button>
+            {ref}
             {index < refs.length - 1 && <span className="text-blue-700">, </span>}
           </span>
         );
