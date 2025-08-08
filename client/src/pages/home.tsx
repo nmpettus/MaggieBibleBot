@@ -320,6 +320,85 @@ export default function Home() {
     });
   };
   
+  const resumeWordHighlighting = (textWords: string[], audio: HTMLAudioElement) => {
+    console.log('🎯 Resuming word highlighting from current position');
+    
+    clearHighlightTimeouts();
+    
+    const duration = audio.duration;
+    const currentTime = audio.currentTime;
+    
+    if (!duration || duration === 0) {
+      console.warn('⚠️ No audio duration for resume, using estimated timing');
+      resumeWithEstimatedTiming(textWords, currentTime);
+      return;
+    }
+    
+    console.log(`⏱️ Resuming at ${currentTime}s of ${duration}s`);
+    
+    // Calculate which word we should be at based on current time
+    const totalWords = textWords.length;
+    const timePerWord = duration / totalWords;
+    const currentWordIndex = Math.floor(currentTime / timePerWord);
+    
+    console.log(`🎯 Should be at word ${currentWordIndex} when resuming`);
+    
+    // Set current word immediately
+    if (currentWordIndex < totalWords) {
+      setCurrentWordIndex(currentWordIndex);
+    }
+    
+    // Schedule remaining words
+    for (let index = currentWordIndex + 1; index < totalWords; index++) {
+      const wordTime = index * timePerWord;
+      const delay = (wordTime - currentTime) * 1000; // Convert to milliseconds
+      
+      if (delay > 0) {
+        const timeout = setTimeout(() => {
+          if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+            console.log(`🔤 Highlighting word ${index}: "${textWords[index]}"`);
+            setCurrentWordIndex(index);
+          }
+        }, delay);
+        
+        highlightTimeoutRef.current.push(timeout);
+      }
+    }
+  };
+  
+  const resumeWithEstimatedTiming = (textWords: string[], currentTime: number) => {
+    console.log('🎯 Using estimated timing for resume highlighting');
+    
+    // Sara speaks at about 160 words per minute
+    const wordsPerMinute = 160;
+    const secondsPerWord = 60 / wordsPerMinute;
+    const currentWordIndex = Math.floor(currentTime / secondsPerWord);
+    
+    console.log(`🎯 Estimated current word: ${currentWordIndex}`);
+    
+    // Set current word immediately
+    if (currentWordIndex < textWords.length) {
+      setCurrentWordIndex(currentWordIndex);
+    }
+    
+    // Schedule remaining words
+    for (let index = currentWordIndex + 1; index < textWords.length; index++) {
+      const wordTime = index * secondsPerWord;
+      const delay = (wordTime - currentTime) * 1000;
+      
+      if (delay > 0) {
+        const timeout = setTimeout(() => {
+          if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+            console.log(`🔤 Highlighting word ${index} (estimated): "${textWords[index]}"`);
+            setCurrentWordIndex(index);
+          }
+        }, delay);
+        
+        highlightTimeoutRef.current.push(timeout);
+      }
+    }
+  };
+  
   const highlightWithEstimatedTiming = (textWords: string[]) => {
     console.log('🎯 Using estimated timing for highlighting');
     
@@ -346,6 +425,8 @@ export default function Home() {
     if (audioRef.current && isPlaying && !isPaused) {
       console.log('⏸️ Pausing audio...');
       audioRef.current.pause();
+      // Clear highlighting timeouts when pausing
+      clearHighlightTimeouts();
       // State will be updated by the onpause event
     } else {
       console.log('⏸️ Cannot pause - audio not playing or already paused');
@@ -358,6 +439,10 @@ export default function Home() {
       console.log('▶️ Resuming audio...');
       audioRef.current.play().then(() => {
         console.log('▶️ Resume successful');
+        // Restart highlighting from current position when resuming
+        if (words.length > 0) {
+          resumeWordHighlighting(words, audioRef.current!);
+        }
         // State will be updated by the onplay event
       }).catch(error => {
         console.error('❌ Resume failed:', error);
