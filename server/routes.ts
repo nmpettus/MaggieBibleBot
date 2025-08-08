@@ -107,47 +107,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Text is required" });
       }
 
-      // Always use Sara voice first, then Samantha fallback
-      const primaryVoice = voiceName || 'en-US-SaraNeural';
-      console.log(`🔊 Attempting speech with voice: ${primaryVoice}`);
+      // FORCE Sara voice - ignore any other voice requests
+      const saraVoice = 'en-US-SaraNeural';
+      console.log(`🔊 FORCING Sara voice (ignoring request for: ${voiceName})`);
       
       try {
-        const azureAudioBuffer = await generateSpeechAzureTTS(text, primaryVoice);
+        const azureAudioBuffer = await generateSpeechAzureTTS(text, saraVoice);
         
-        console.log(`✅ ${primaryVoice} succeeded: ${azureAudioBuffer.byteLength} bytes`);
+        console.log(`✅ Sara voice succeeded: ${azureAudioBuffer.byteLength} bytes`);
         
         // Set appropriate headers for audio response
         res.setHeader('Content-Type', 'audio/mpeg');
         res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
         res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.setHeader('X-Voice-Used', primaryVoice.includes('Sara') ? 'Azure Sara' : 'Azure Samantha');
+        res.setHeader('X-Voice-Used', 'Sara');
         
         return res.send(azureAudioBuffer);
         
       } catch (azureError) {
-        // If Sara fails, try Samantha as fallback only if we were using Sara
-        if (primaryVoice.includes('Sara')) {
-          try {
-            console.log(`⚠️ Sara failed, trying Samantha fallback`);
-            const fallbackVoice = 'en-US-SamanthaNeural';
-            const fallbackBuffer = await generateSpeechAzureTTS(text, fallbackVoice);
-            
-            res.setHeader('Content-Type', 'audio/mpeg');
-            res.setHeader('Content-Length', fallbackBuffer.byteLength.toString());
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            res.setHeader('X-Voice-Used', 'Azure Samantha');
-            
-            console.log(`✅ Samantha fallback succeeded: ${fallbackBuffer.byteLength} bytes`);
-            return res.send(fallbackBuffer);
-            
-          } catch (fallbackError) {
-            console.log(`⚠️ Both Sara and Samantha failed: ${fallbackError.message}`);
-          }
-        } else {
-          console.log(`⚠️ Samantha voice failed: ${azureError.message}`);
-        }
+        console.log(`⚠️ Sara voice failed: ${azureError.message}`);
         
-        throw new Error(`Azure TTS failed: ${azureError.message}`);
+        // Only use Samantha as absolute last resort
+        try {
+          console.log(`🚨 EMERGENCY: Trying Samantha as last resort`);
+          const emergencyBuffer = await generateSpeechAzureTTS(text, 'en-US-SamanthaNeural');
+          
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Content-Length', emergencyBuffer.byteLength.toString());
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+          res.setHeader('X-Voice-Used', 'Emergency Fallback');
+          
+          console.log(`✅ Emergency Samantha succeeded: ${emergencyBuffer.byteLength} bytes`);
+          return res.send(emergencyBuffer);
+          
+        } catch (emergencyError) {
+          console.log(`💥 TOTAL FAILURE: Both Sara and emergency Samantha failed`);
+          throw new Error(`All voices failed: Sara (${azureError.message}), Samantha (${emergencyError.message})`);
+        }
       }
       
     } catch (error) {
