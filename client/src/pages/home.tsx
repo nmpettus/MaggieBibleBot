@@ -944,11 +944,6 @@ export default function Home() {
             </div>
           </div>
         )}
-                "{selectedVerse?.text}"
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
