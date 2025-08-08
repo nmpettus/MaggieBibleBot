@@ -34,3 +34,6 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[env]
+OPENAI_API_KEY = "your_openai_api_key_here"
