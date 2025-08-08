@@ -152,7 +152,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(Buffer.from(audioBuffer));
         
       } catch (elevenLabsError) {
-        console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
+        if (elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED') {
+          console.log(`⚠️ ElevenLabs not configured - skipping to Azure fallback`);
+        } else {
+          console.log(`⚠️ Faith voice failed: ${elevenLabsError.message}`);
+        }
         
         // If ElevenLabs fails, try Azure TTS as premium fallback
         try {
@@ -183,10 +187,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.send(azureAudioBuffer);
           
         } catch (azureError) {
-          console.log(`⚠️ Azure TTS also failed: ${azureError.message}`);
+          if (azureError.message === 'AZURE_NOT_CONFIGURED') {
+            console.log(`⚠️ Azure TTS not configured - both premium services unavailable`);
+          } else {
+            console.log(`⚠️ Azure TTS also failed: ${azureError.message}`);
+          }
           
           // Both premium services failed - return error
-          throw new Error(`Both premium TTS services failed: ${elevenLabsError.message}, ${azureError.message}`);
+          const elevenLabsMsg = elevenLabsError.message === 'ELEVENLABS_NOT_CONFIGURED' ? 'Not configured' : elevenLabsError.message;
+          const azureMsg = azureError.message === 'AZURE_NOT_CONFIGURED' ? 'Not configured' : azureError.message;
+          throw new Error(`Both premium TTS services failed: ${elevenLabsMsg}, ${azureMsg}`);
         }
       }
       
@@ -199,10 +209,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Faith voice quota exceeded. Using enhanced browser voice.",
           quotaExceeded: true
         });
-      } else if (error.message === 'AZURE_AUTH_ERROR') {
+      } else if (error.message.includes('Not configured')) {
         res.status(500).json({ 
           message: "Premium voice services need setup. Using enhanced browser voice.",
-          fallback: true 
+          fallback: true,
+          needsSetup: true
         });
       } else {
         res.status(500).json({ 

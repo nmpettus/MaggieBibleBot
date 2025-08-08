@@ -22,6 +22,11 @@ export async function generateSpeechElevenLabs(
   try {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     
+    if (!apiKey || apiKey.trim() === '') {
+      console.log('⚠️ ElevenLabs API key not configured - skipping Faith voice');
+      throw new Error('ELEVENLABS_NOT_CONFIGURED');
+    }
+    
     // Optimize text length for faster generation
     const maxLength = 800; // Shorter text = faster generation
     const optimizedText = text.length > maxLength ? 
@@ -32,7 +37,7 @@ export async function generateSpeechElevenLabs(
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': apiKey || ''
+        'xi-api-key': apiKey
       },
       body: JSON.stringify({
         text: optimizedText,
