@@ -55,7 +55,7 @@ export const AZURE_CHILDLIKE_VOICES: AzureTTSVoice[] = [
 
 export async function generateSpeechAzureTTS(
   text: string,
-  voiceName: string = "en-US-SaraNeural"
+  voiceName: string = "en-US-SaraNeural" // Always default to Sara
 ): Promise<Buffer> {
   const speechKey = process.env.AZURE_SPEECH_KEY;
   const speechRegion = process.env.AZURE_SPEECH_REGION;

@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`🔊 Using Azure TTS genuine child voice`);
           
           // Allow voice switching via environment variable (default: Sara)
-          const azureVoice = process.env.AZURE_VOICE || 'en-US-SaraNeural';
+          const azureVoice = 'en-US-SaraNeural'; // Always use Sara voice
           const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
           
           // Extract voice name for display
