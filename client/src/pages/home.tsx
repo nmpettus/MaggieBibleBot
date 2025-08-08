@@ -648,21 +648,118 @@ export default function Home() {
   };
 
   const renderAnswerWithVerseLinks = (text: string) => {
-    // Enhanced pattern to catch ALL Bible verse formats
-    const versePattern = /\b(\d?\s?[A-Za-z]+\.?\s+\d+(?::\d+)?(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/g;
+    // Enhanced pattern to catch ALL Bible verse formats including book names
+    const versePattern = /\b((?:\d\s+)?(?:Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|1\s+Samuel|2\s+Samuel|1\s+Kings|2\s+Kings|1\s+Chronicles|2\s+Chronicles|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song\s+of\s+Songs|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|1\s+Corinthians|2\s+Corinthians|Galatians|Ephesians|Philippians|Colossians|1\s+Thessalonians|2\s+Thessalonians|1\s+Timothy|2\s+Timothy|Titus|Philemon|Hebrews|James|1\s+Peter|2\s+Peter|1\s+John|2\s+John|3\s+John|Jude|Revelation)\.?\s+\d+(?::\d+)?(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/gi;
     const parts = text.split(versePattern);
     
     return parts.map((part, index) => {
-      // Clean up the reference for matching - handle more variations
-      const cleanPart = part.trim().replace(/[.,;]$/, '').replace(/\s+/g, ' ');
+      // Check if this part matches our verse pattern
+      const isVerseReference = versePattern.test(part);
       
-      // Check if this looks like a Bible reference
-      const looksLikeBibleRef = /\b[A-Za-z]+\.?\s+\d+/.test(cleanPart);
+      if (isVerseReference && part.trim()) {
+        // Clean up the reference for matching
+        const cleanPart = part.trim().replace(/[.,;]$/, '').replace(/\s+/g, ' ');
+        
+        // Try to find matching verse in our database
+        const matchingVerse = BIBLE_VERSES.find(verse => {
+          const verseRef = verse.reference.toLowerCase().replace(/\s+/g, ' ');
+          const partRef = cleanPart.toLowerCase().replace(/\s+/g, ' ');
+          return verseRef === partRef || 
+                 verseRef.includes(partRef) || 
+                 partRef.includes(verseRef);
+        });
+        
+        // If we found a matching verse, make it clickable
+        if (matchingVerse) {
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedVerse(matchingVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to read ${matchingVerse.reference}`}
+            >
+              {part}
+            </button>
+          );
+        } else {
+          // If no exact match found, create a generic verse entry
+          const genericVerse = {
+            reference: cleanPart,
+            text: `"${cleanPart}" - Please look up this verse in your Bible to read the full text. This is a wonderful passage that relates to your question!`
+          };
+          
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedVerse(genericVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to see ${cleanPart}`}
+            >
+              {part}
+            </button>
+          );
+        }
+      } else {
+        // Regular text, not a verse reference
+        return <span key={index}>{part}</span>;
+      }
+    });
+  };
+
+  const renderScriptureReferences = (references: string) => {
+    // Enhanced pattern to catch ALL Bible verse formats
+    const versePattern = /\b((?:\d\s+)?(?:Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|1\s+Samuel|2\s+Samuel|1\s+Kings|2\s+Kings|1\s+Chronicles|2\s+Chronicles|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song\s+of\s+Songs|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|1\s+Corinthians|2\s+Corinthians|Galatians|Ephesians|Philippians|Colossians|1\s+Thessalonians|2\s+Thessalonians|1\s+Timothy|2\s+Timothy|Titus|Philemon|Hebrews|James|1\s+Peter|2\s+Peter|1\s+John|2\s+John|3\s+John|Jude|Revelation)\.?\s+\d+(?::\d+)?(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/gi;
+    const parts = references.split(versePattern);
+    
+    return parts.map((part, index) => {
+      const isVerseReference = versePattern.test(part);
       
-      if (looksLikeBibleRef) {
-        // Try to find exact match first
-        const matchingVerse = BIBLE_VERSES.find(verse => 
-          verse.reference.toLowerCase() === cleanPart.toLowerCase()
+      if (isVerseReference && part.trim()) {
+        const cleanPart = part.trim().replace(/[.,;]$/, '').replace(/\s+/g, ' ');
+        
+        // Try to find matching verse
+        const matchingVerse = BIBLE_VERSES.find(verse => {
+          const verseRef = verse.reference.toLowerCase().replace(/\s+/g, ' ');
+          const partRef = cleanPart.toLowerCase().replace(/\s+/g, ' ');
+          return verseRef === partRef || 
+                 verseRef.includes(partRef) || 
+                 partRef.includes(verseRef);
+        });
+        
+        if (matchingVerse) {
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedVerse(matchingVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to read ${matchingVerse.reference}`}
+            >
+              {part}
+            </button>
+          );
+        } else {
+          // Create generic verse for unknown references
+          const genericVerse = {
+            reference: cleanPart,
+            text: `"${cleanPart}" - Please look up this verse in your Bible to read the full text. This is a wonderful passage that relates to your question!`
+          };
+          
+          return (
+            <button
+              key={index}
+              onClick={() => setSelectedVerse(genericVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to see ${cleanPart}`}
+            >
+              {part}
+            </button>
+          );
+        }
+      } else {
+        return <span key={index}>{part}</span>;
+      }
+    });
+  };
         );
         
         // If no exact match, try partial matching
