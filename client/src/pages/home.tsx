@@ -57,8 +57,7 @@ export default function Home() {
   const [selectedVerse, setSelectedVerse] = useState<{reference: string, text: string} | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const pauseTimeRef = useRef<number>(0);
+  const highlightTimeoutRef = useRef<NodeJS.Timeout[]>([]);
   const { toast } = useToast();
 
   const {
@@ -148,10 +147,7 @@ export default function Home() {
       setResponse(data);
       setQuestion('');
       
-      // Automatically play Sara voice
-      setTimeout(() => {
-        playAudio(data.answer);
-      }, 500);
+      console.log('✅ Got response, will auto-play Sara voice');
 
     } catch (error) {
       console.error('Error asking question:', error);
@@ -165,9 +161,19 @@ export default function Home() {
     }
   };
 
+  const clearHighlightTimeouts = () => {
+    highlightTimeoutRef.current.forEach(timeout => clearTimeout(timeout));
+    highlightTimeoutRef.current = [];
+  };
+
   const playAudio = async (text: string) => {
+    console.log('🔊 PLAY AUDIO CALLED with text:', text.substring(0, 50) + '...');
+    
     try {
-      console.log('🔊 Requesting Sara voice for text:', text.substring(0, 50) + '...');
+      // Stop any existing audio first
+      stopAudio();
+      
+      console.log('🎵 Requesting Sara voice from Azure TTS...');
       
       const response = await fetch('/api/generate-speech', {
         method: 'POST',
@@ -176,22 +182,30 @@ export default function Home() {
         },
         body: JSON.stringify({ 
           text: text,
-          voiceName: 'en-US-SaraNeural' // Force Sara voice
+          voiceName: 'en-US-SaraNeural'
         }),
       });
 
+      console.log('📡 Speech API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`Speech generation failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Speech API failed:', errorText);
+        throw new Error(`Speech generation failed: ${response.status} - ${errorText}`);
       }
 
       const voiceUsed = response.headers.get('X-Voice-Used');
-      console.log('🎵 Voice used:', voiceUsed);
+      console.log('🎵 Voice used from header:', voiceUsed);
 
       const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log('🎵 Audio blob size:', audioBlob.size, 'bytes');
       
-      // Stop any existing audio
-      stopAudio();
+      if (audioBlob.size === 0) {
+        throw new Error('Received empty audio blob');
+      }
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log('🎵 Created audio URL:', audioUrl);
       
       // Create new audio element
       const audio = new Audio(audioUrl);
@@ -202,142 +216,166 @@ export default function Home() {
       setWords(textWords);
       setCurrentWordIndex(-1);
       
+      console.log('🎯 Prepared', textWords.length, 'words for highlighting');
+
+      // Set up audio event handlers
       audio.onloadeddata = () => {
-        console.log('🎵 Sara voice audio loaded, duration:', audio.duration);
+        console.log('🎵 Audio loaded, duration:', audio.duration, 'seconds');
         setIsPlaying(true);
         setIsPaused(false);
-        startTimeRef.current = Date.now();
         
-        audio.play().catch(error => {
-          console.error('Audio play failed:', error);
+        // Start playing
+        audio.play().then(() => {
+          console.log('▶️ Audio started playing successfully');
+        }).catch(error => {
+          console.error('❌ Audio play failed:', error);
           setIsPlaying(false);
+          toast({
+            title: "Audio Play Failed",
+            description: "Sara's voice couldn't start playing. Try again.",
+            variant: "destructive",
+          });
         });
       };
       
       audio.onplay = () => {
-        console.log('🎵 Sara voice started playing');
-        // Start word highlighting when audio actually starts
-        highlightWords(textWords, audio);
+        console.log('🎵 Audio PLAY event fired');
+        setIsPlaying(true);
+        setIsPaused(false);
+        startWordHighlighting(textWords, audio);
+      };
+
+      audio.onpause = () => {
+        console.log('⏸️ Audio PAUSE event fired');
+        setIsPaused(true);
+        clearHighlightTimeouts();
       };
 
       audio.onended = () => {
-        console.log('🎵 Sara voice playback completed');
+        console.log('🏁 Audio ENDED event fired');
         setIsPlaying(false);
         setIsPaused(false);
         setCurrentWordIndex(-1);
         setWords([]);
+        clearHighlightTimeouts();
         URL.revokeObjectURL(audioUrl);
       };
 
       audio.onerror = (error) => {
-        console.error('Audio error:', error);
+        console.error('💥 Audio ERROR event:', error);
         setIsPlaying(false);
         setIsPaused(false);
+        clearHighlightTimeouts();
         toast({
           title: "Audio Error",
-          description: "Sara voice had trouble playing. Please try again.",
+          description: "Sara's voice had trouble playing. Please try again.",
           variant: "destructive",
         });
       };
 
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('💥 Play audio error:', error);
+      setIsPlaying(false);
+      setIsPaused(false);
       toast({
         title: "Sara Voice Unavailable",
-        description: "Sara's voice is temporarily unavailable. Please try again.",
+        description: error instanceof Error ? error.message : "Sara's voice is temporarily unavailable. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const highlightWords = (textWords: string[], audio: HTMLAudioElement) => {
-    if (!audio || !textWords.length) return;
-    
+  const startWordHighlighting = (textWords: string[], audio: HTMLAudioElement) => {
     console.log('🎯 Starting word highlighting for', textWords.length, 'words');
     
-    // Clear any existing highlighting
+    clearHighlightTimeouts();
     setCurrentWordIndex(-1);
     
-    // Wait for audio to actually start playing
-    const startHighlighting = () => {
-      const duration = audio.duration;
-      if (!duration || duration === 0) {
-        console.warn('⚠️ Audio duration not available, using estimated timing');
-        // Fallback timing if duration not available
-        highlightWithEstimatedTiming(textWords);
-        return;
-      }
-      
-      console.log(`🎵 Audio duration: ${duration}s for ${textWords.length} words`);
-      
-      // Calculate timing based on actual audio duration
-      const wordsPerSecond = textWords.length / duration;
-      const baseInterval = 1000 / wordsPerSecond; // milliseconds per word
-      
-      console.log(`⏱️ Base interval: ${baseInterval}ms per word`);
-      
-      textWords.forEach((word, index) => {
-        const delay = index * baseInterval;
-        
-        setTimeout(() => {
-          if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
-            console.log(`🔤 Highlighting word ${index}: "${word}"`);
-            setCurrentWordIndex(index);
-          }
-        }, delay);
-      });
-    };
-    
-    // Start highlighting when audio actually begins playing
-    if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
-      startHighlighting();
-    } else {
-      audio.addEventListener('canplay', startHighlighting, { once: true });
+    const duration = audio.duration;
+    if (!duration || duration === 0) {
+      console.warn('⚠️ No audio duration, using estimated timing');
+      highlightWithEstimatedTiming(textWords);
+      return;
     }
+    
+    console.log(`⏱️ Audio duration: ${duration}s, calculating timing...`);
+    
+    // Calculate timing based on actual audio duration
+    const totalWords = textWords.length;
+    const timePerWord = duration / totalWords * 1000; // milliseconds per word
+    
+    console.log(`⏱️ Time per word: ${timePerWord}ms`);
+    
+    textWords.forEach((word, index) => {
+      const delay = index * timePerWord;
+      
+      const timeout = setTimeout(() => {
+        if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+          console.log(`🔤 Highlighting word ${index}: "${word}"`);
+          setCurrentWordIndex(index);
+        }
+      }, delay);
+      
+      highlightTimeoutRef.current.push(timeout);
+    });
   };
   
   const highlightWithEstimatedTiming = (textWords: string[]) => {
-    // Fallback timing estimation (Sara speaks at about 150-180 words per minute)
+    console.log('🎯 Using estimated timing for highlighting');
+    
+    // Sara speaks at about 150-180 words per minute
     const wordsPerMinute = 160;
     const msPerWord = (60 * 1000) / wordsPerMinute;
     
     textWords.forEach((word, index) => {
       const delay = index * msPerWord;
       
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
           console.log(`🔤 Highlighting word ${index} (estimated): "${word}"`);
           setCurrentWordIndex(index);
         }
       }, delay);
+      
+      highlightTimeoutRef.current.push(timeout);
     });
   };
 
   const pauseAudio = () => {
+    console.log('⏸️ PAUSE AUDIO CALLED');
     if (audioRef.current && isPlaying && !isPaused) {
-      console.log('⏸️ PAUSING Sara voice');
+      console.log('⏸️ Pausing audio...');
       audioRef.current.pause();
-      setIsPaused(true);
-      pauseTimeRef.current = audioRef.current.currentTime;
-      console.log(`⏸️ Paused at ${pauseTimeRef.current}s`);
+      // State will be updated by the onpause event
+    } else {
+      console.log('⏸️ Cannot pause - audio not playing or already paused');
     }
   };
 
   const resumeAudio = () => {
+    console.log('▶️ RESUME AUDIO CALLED');
     if (audioRef.current && isPlaying && isPaused) {
-      console.log('▶️ RESUMING Sara voice');
+      console.log('▶️ Resuming audio...');
       audioRef.current.play().then(() => {
         console.log('▶️ Resume successful');
+        // State will be updated by the onplay event
       }).catch(error => {
         console.error('❌ Resume failed:', error);
+        toast({
+          title: "Resume Failed",
+          description: "Couldn't resume Sara's voice. Try restarting.",
+          variant: "destructive",
+        });
       });
-      setIsPaused(false);
+    } else {
+      console.log('▶️ Cannot resume - audio not paused');
     }
   };
 
   const stopAudio = () => {
+    console.log('⏹️ STOP AUDIO CALLED');
     if (audioRef.current) {
-      console.log('⏹️ STOPPING Sara voice');
+      console.log('⏹️ Stopping audio...');
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
@@ -345,11 +383,12 @@ export default function Home() {
     setIsPaused(false);
     setCurrentWordIndex(-1);
     setWords([]);
+    clearHighlightTimeouts();
   };
 
   const restartAudio = () => {
+    console.log('🔄 RESTART AUDIO CALLED');
     if (response) {
-      console.log('🔄 Restarting Sara voice');
       stopAudio();
       setTimeout(() => playAudio(response.answer), 100);
     }
@@ -367,9 +406,9 @@ export default function Home() {
             key={index}
             className={`${
               index === currentWordIndex 
-                ? 'font-semibold underline decoration-2 underline-offset-2 decoration-blue-500' 
+                ? 'font-bold underline decoration-2 underline-offset-2 decoration-blue-600 bg-blue-100 px-1 rounded' 
                 : ''
-            } transition-all duration-100`}
+            } transition-all duration-200`}
           >
             {word}{index < words.length - 1 ? ' ' : ''}
           </span>
@@ -554,80 +593,96 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Audio Controls */}
-              <div className="flex flex-wrap items-center gap-3 mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Volume2 className="h-4 w-4 text-blue-600" />
+              {/* ENHANCED AUDIO CONTROLS */}
+              <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-blue-200 shadow-lg">
+                {/* Sara Voice Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-300 shadow-md">
+                      <img 
+                        src="https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" 
+                        alt="Sara" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-blue-800 text-lg">Sara's Voice</h4>
+                      <p className="text-sm text-blue-600">Azure Child Voice</p>
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-blue-800">Sara's Voice</span>
-                </div>
-                
-                {!isPlaying ? (
-                  <Button
-                    onClick={() => playAudio(response.answer)}
-                    variant="default"
-                    size="sm"
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <Play className="h-4 w-4" />
-                    Play Sara's Voice
-                  </Button>
-                ) : (
+                  
+                  {/* Status Indicator */}
                   <div className="flex items-center gap-2">
-                    {!isPaused ? (
-                      <Button
-                        onClick={pauseAudio}
-                        variant="default"
-                        size="sm"
-                        className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white"
-                      >
-                        <Pause className="h-4 w-4" />
-                        Pause
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={resumeAudio}
-                        variant="default"
-                        size="sm"
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <Play className="h-4 w-4" />
-                        Continue
-                      </Button>
-                    )}
-                    
-                    <Button
-                      onClick={restartAudio}
-                      variant="default"
-                      size="sm"
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      Restart
-                    </Button>
-                    
-                    <Button
-                      onClick={stopAudio}
-                      variant="default"
-                      size="sm"
-                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      <Square className="h-4 w-4" />
-                      Stop
-                    </Button>
+                    <div className={`w-3 h-3 rounded-full ${
+                      isPlaying && !isPaused ? 'bg-green-500 animate-pulse' : 
+                      isPaused ? 'bg-yellow-500' : 
+                      'bg-gray-400'
+                    }`}></div>
+                    <span className="text-sm font-medium text-gray-700">
+                      {isPlaying && !isPaused ? 'Sara Speaking...' : 
+                       isPaused ? 'Sara Paused' : 
+                       'Sara Ready'}
+                    </span>
                   </div>
-                )}
-                
-                <div className="flex items-center gap-2 ml-auto">
-                  {isPlaying && (
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-green-500 animate-pulse'}`}></div>
-                      <span className="text-sm font-medium text-gray-700">
-                        {isPaused ? 'Sara Paused' : 'Sara Speaking...'}
-                      </span>
+                </div>
+
+                {/* Control Buttons */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {!isPlaying ? (
+                    <Button
+                      onClick={() => playAudio(response.answer)}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-all duration-200 hover:scale-105"
+                    >
+                      <Play className="h-5 w-5" />
+                      Play Sara's Voice
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      {!isPaused ? (
+                        <Button
+                          onClick={pauseAudio}
+                          className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-3 rounded-lg shadow-md transition-all duration-200 hover:scale-105"
+                        >
+                          <Pause className="h-5 w-5" />
+                          Pause
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={resumeAudio}
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-3 rounded-lg shadow-md transition-all duration-200 hover:scale-105"
+                        >
+                          <Play className="h-5 w-5" />
+                          Continue
+                        </Button>
+                      )}
+                      
+                      <Button
+                        onClick={restartAudio}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-3 rounded-lg shadow-md transition-all duration-200 hover:scale-105"
+                      >
+                        <RotateCcw className="h-5 w-5" />
+                        Restart
+                      </Button>
+                      
+                      <Button
+                        onClick={stopAudio}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-3 rounded-lg shadow-md transition-all duration-200 hover:scale-105"
+                      >
+                        <Square className="h-5 w-5" />
+                        Stop
+                      </Button>
                     </div>
                   )}
+                </div>
+
+                {/* Debug Info */}
+                <div className="mt-4 p-3 bg-white/50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-gray-600">
+                    <strong>Debug:</strong> Playing: {isPlaying ? 'Yes' : 'No'} | 
+                    Paused: {isPaused ? 'Yes' : 'No'} | 
+                    Words: {words.length} | 
+                    Current Word: {currentWordIndex + 1}
+                  </p>
                 </div>
               </div>
             </CardContent>
