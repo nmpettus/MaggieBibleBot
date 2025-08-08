@@ -111,8 +111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         console.log(`🔊 Using Azure TTS genuine child voice`);
         
-        // Always use Sara voice
-        const azureVoice = 'en-US-SaraNeural';
+        // Try Sara first, fallback to Samantha
+        let azureVoice = 'en-US-SaraNeural';
         const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
         
         console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
@@ -128,6 +128,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(azureAudioBuffer);
         
       } catch (azureError) {
+        // If Sara fails, try Samantha as fallback
+        if (azureError.message.includes('SYNTHESIS_ERROR') || azureError.message.includes('voice')) {
+          try {
+            console.log(`⚠️ Sara voice failed, trying Samantha fallback`);
+            const fallbackVoice = 'en-US-SamanthaNeural';
+            const fallbackBuffer = await generateSpeechAzureTTS(text, fallbackVoice);
+            
+            res.setHeader('Content-Type', 'audio/mpeg');
+            res.setHeader('Content-Length', fallbackBuffer.byteLength.toString());
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            res.setHeader('X-Voice-Used', 'Azure Samantha (Fallback)');
+            
+            console.log(`✅ Samantha fallback succeeded: ${fallbackBuffer.byteLength} bytes`);
+            return res.send(fallbackBuffer);
+            
+          } catch (fallbackError) {
+            console.log(`⚠️ Both Sara and Samantha failed`);
+          }
+        }
+        
         if (azureError.message === 'AZURE_NOT_CONFIGURED' || 
             azureError.message === 'AZURE_INVALID_REGION') {
           console.log(`⚠️ Azure TTS not configured`);

@@ -20,36 +20,12 @@ export const AZURE_CHILDLIKE_VOICES: AzureTTSVoice[] = [
     description: "Genuine child voice - most youthful option"
   },
   {
-    name: "en-US-AriaNeural", 
-    displayName: "Aria",
+    name: "en-US-SamanthaNeural",
+    displayName: "Samantha",
     gender: "Female",
     locale: "en-US",
     age: "Young Adult",
-    description: "Clear, natural, childlike quality"
-  },
-  {
-    name: "en-US-AnaNeural",
-    displayName: "Ana",
-    gender: "Female",
-    locale: "en-US", 
-    age: "Child",
-    description: "Sweet, young voice perfect for children"
-  },
-  {
-    name: "en-US-EmmaNeural",
-    displayName: "Emma",
-    gender: "Female",
-    locale: "en-US",
-    age: "Young Adult",
-    description: "Bright, youthful, and engaging"
-  },
-  {
-    name: "en-US-JennyNeural",
-    displayName: "Jenny",
-    gender: "Female",
-    locale: "en-US",
-    age: "Young Adult",
-    description: "Warm, friendly (currently in use)"
+    description: "Fallback voice when Sara is unavailable"
   }
 ];
 
