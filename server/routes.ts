@@ -137,9 +137,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First, try ElevenLabs Faith voice
       try {
         // Skip ElevenLabs if not configured
-        if (!process.env.ELEVENLABS_API_KEY || 
-            process.env.ELEVENLABS_API_KEY.trim() === '' || 
-            process.env.ELEVENLABS_API_KEY === 'your_elevenlabs_api_key_here') {
+       if (!process.env.ELEVENLABS_API_KEY || 
+           process.env.ELEVENLABS_API_KEY.trim() === '' || 
+           process.env.ELEVENLABS_API_KEY === 'your_elevenlabs_api_key_here' ||
+           process.env.ELEVENLABS_API_KEY.startsWith('#')) {
           console.log(`⚠️ ElevenLabs not configured - skipping to Azure TTS`);
           throw new Error('ELEVENLABS_NOT_CONFIGURED');
         }

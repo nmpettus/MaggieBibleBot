@@ -60,8 +60,8 @@ export async function generateSpeechAzureTTS(
   const speechKey = process.env.AZURE_SPEECH_KEY;
   const speechRegion = process.env.AZURE_SPEECH_REGION;
 
-  if (!speechKey || speechKey.trim() === '' || speechKey === 'your_azure_speech_key_here' || 
-      !speechRegion || speechRegion.trim() === '' || speechRegion === 'your_azure_region_here') {
+  if (!speechKey || speechKey.trim() === '' || speechKey === 'your_azure_speech_key_here' || speechKey.startsWith('#') ||
+      !speechRegion || speechRegion.trim() === '' || speechRegion === 'your_azure_region_here' || speechRegion.startsWith('#')) {
     console.log('⚠️ Azure Speech Service not configured - credentials missing or using placeholder values');
     throw new Error("AZURE_NOT_CONFIGURED");
   }
