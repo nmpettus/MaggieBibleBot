@@ -406,7 +406,7 @@ export default function Home() {
             key={index}
             className={`${
               index === currentWordIndex 
-                ? 'font-bold underline decoration-2 underline-offset-2 decoration-blue-600 bg-blue-100 px-1 rounded' 
+                ? 'underline decoration-2 underline-offset-2 decoration-blue-600' 
                 : ''
             } transition-all duration-200`}
           >
