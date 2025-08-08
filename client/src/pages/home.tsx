@@ -168,6 +168,8 @@ export default function Home() {
 
   const playAudio = async (text: string) => {
     console.log('🔊 PLAY AUDIO CALLED with text:', text.substring(0, 50) + '...');
+    console.log('📝 Full text length:', text.length, 'characters');
+    console.log('📝 Text ends with:', text.slice(-50));
     
     try {
       // Stop any existing audio first
@@ -221,6 +223,7 @@ export default function Home() {
       // Set up audio event handlers
       audio.onloadeddata = () => {
         console.log('🎵 Audio loaded, duration:', audio.duration, 'seconds');
+        console.log('📊 Expected speech time for', textWords.length, 'words:', (textWords.length / 160 * 60).toFixed(1), 'seconds');
         setIsPlaying(true);
         setIsPaused(false);
         
@@ -253,6 +256,8 @@ export default function Home() {
 
       audio.onended = () => {
         console.log('🏁 Audio ENDED event fired');
+        console.log('🏁 Final audio duration was:', audio.duration, 'seconds');
+        console.log('🏁 Last highlighted word index:', currentWordIndex, 'of', textWords.length);
         setIsPlaying(false);
         setIsPaused(false);
         setCurrentWordIndex(-1);
@@ -287,6 +292,8 @@ export default function Home() {
 
   const startWordHighlighting = (textWords: string[], audio: HTMLAudioElement) => {
     console.log('🎯 Starting word highlighting for', textWords.length, 'words');
+    console.log('🎯 First few words:', textWords.slice(0, 5));
+    console.log('🎯 Last few words:', textWords.slice(-5));
     
     clearHighlightTimeouts();
     setCurrentWordIndex(-1);
@@ -302,7 +309,8 @@ export default function Home() {
     
     // Calculate timing based on actual audio duration
     const totalWords = textWords.length;
-    const timePerWord = duration / totalWords * 1000; // milliseconds per word
+    // Add 10% buffer to ensure we don't run out of time before audio ends
+    const timePerWord = (duration * 0.9) / totalWords * 1000; // milliseconds per word
     
     console.log(`⏱️ Time per word: ${timePerWord}ms`);
     
@@ -318,6 +326,16 @@ export default function Home() {
       
       highlightTimeoutRef.current.push(timeout);
     });
+    
+    // Add a final timeout to ensure we highlight the last word
+    const finalTimeout = setTimeout(() => {
+      if (audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
+        console.log('🏁 Ensuring final word is highlighted');
+        setCurrentWordIndex(textWords.length - 1);
+      }
+    }, duration * 900); // 90% of audio duration
+    
+    highlightTimeoutRef.current.push(finalTimeout);
   };
   
   const resumeWordHighlighting = (textWords: string[], audio: HTMLAudioElement) => {

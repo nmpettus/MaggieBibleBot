@@ -62,8 +62,9 @@ export async function generateSpeechAzureTTS(
     const ssml = `
       <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
         <voice name="${voiceName}">
-          <prosody rate="0.9" pitch="+5%">
-            ${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+          <prosody rate="0.85" pitch="+3%">
+            ${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').trim()}
+            <break time="500ms"/>
           </prosody>
         </voice>
       </speak>
