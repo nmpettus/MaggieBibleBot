@@ -532,14 +532,15 @@ export default function Home() {
         // Show immediate feedback to user
         const startTime = Date.now();
         
+        // Always use Azure Sara voice
         const response = await fetch('/api/generate-speech', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            text: text,
-            voiceId: selectedVoice
+          body: JSON.stringify({ 
+            text,
+            voiceName: 'en-US-SaraNeural' // Force Sara voice
           }),
         });
 
@@ -564,6 +565,7 @@ export default function Home() {
         }
 
         const audioBuffer = await response.arrayBuffer();
+        console.log('🔊 Audio blob received:', audioBuffer.byteLength, 'bytes');
         
         // Get the actual voice used from response headers
         const voiceUsed = response.headers.get('X-Voice-Used') || 'Faith';
@@ -755,6 +757,7 @@ export default function Home() {
         // Load the audio data
         audio.preload = 'auto';
         audio.load();
+        console.log('🎵 Playing Sara voice audio');
         return;
       } catch (error) {
         console.error('ElevenLabs speech error:', error);

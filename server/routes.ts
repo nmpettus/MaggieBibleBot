@@ -101,83 +101,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate speech with ElevenLabs Faith voice and Azure TTS fallback
   app.post("/api/generate-speech", async (req, res) => {
     try {
-      const { text, voiceId } = req.body;
+      const { text, voiceName } = req.body;
       
       if (!text || text.trim().length === 0) {
         return res.status(400).json({ message: "Text is required" });
       }
 
-      // Use Azure TTS as primary service
+      // Always use Sara voice first, then Samantha fallback
+      const primaryVoice = voiceName || 'en-US-SaraNeural';
+      console.log(`🔊 Attempting speech with voice: ${primaryVoice}`);
+      
       try {
-        console.log(`🔊 Using Azure TTS genuine child voice`);
+        const azureAudioBuffer = await generateSpeechAzureTTS(text, primaryVoice);
         
-        // Try Sara first, fallback to Samantha
-        let azureVoice = 'en-US-SaraNeural';
-        const azureAudioBuffer = await generateSpeechAzureTTS(text, azureVoice);
-        
-        console.log(`📦 Azure buffer type: ${typeof azureAudioBuffer}, length: ${azureAudioBuffer?.byteLength || 'undefined'}`);
+        console.log(`✅ ${primaryVoice} succeeded: ${azureAudioBuffer.byteLength} bytes`);
         
         // Set appropriate headers for audio response
         res.setHeader('Content-Type', 'audio/mpeg');
         res.setHeader('Content-Length', azureAudioBuffer.byteLength.toString());
         res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.setHeader('X-Voice-Used', 'Azure Sara');
+        res.setHeader('X-Voice-Used', primaryVoice.includes('Sara') ? 'Azure Sara' : 'Azure Samantha');
         
-        console.log(`✅ Azure TTS succeeded: ${azureAudioBuffer.byteLength} bytes`);
-        console.log(`🎯 Setting voice header: Azure Sara`);
         return res.send(azureAudioBuffer);
         
       } catch (azureError) {
-        // If Sara fails, try Samantha as fallback
-        if (azureError.message.includes('SYNTHESIS_ERROR') || azureError.message.includes('voice')) {
+        // If Sara fails, try Samantha as fallback only if we were using Sara
+        if (primaryVoice.includes('Sara')) {
           try {
-            console.log(`⚠️ Sara voice failed, trying Samantha fallback`);
+            console.log(`⚠️ Sara failed, trying Samantha fallback`);
             const fallbackVoice = 'en-US-SamanthaNeural';
             const fallbackBuffer = await generateSpeechAzureTTS(text, fallbackVoice);
             
             res.setHeader('Content-Type', 'audio/mpeg');
             res.setHeader('Content-Length', fallbackBuffer.byteLength.toString());
             res.setHeader('Cache-Control', 'public, max-age=3600');
-            res.setHeader('X-Voice-Used', 'Azure Samantha (Fallback)');
+            res.setHeader('X-Voice-Used', 'Azure Samantha');
             
             console.log(`✅ Samantha fallback succeeded: ${fallbackBuffer.byteLength} bytes`);
             return res.send(fallbackBuffer);
             
           } catch (fallbackError) {
-            console.log(`⚠️ Both Sara and Samantha failed`);
+            console.log(`⚠️ Both Sara and Samantha failed: ${fallbackError.message}`);
           }
-        }
-        
-        if (azureError.message === 'AZURE_NOT_CONFIGURED' || 
-            azureError.message === 'AZURE_INVALID_REGION') {
-          console.log(`⚠️ Azure TTS not configured`);
         } else {
-          console.log(`⚠️ Azure TTS failed: ${azureError.message}`);
+          console.log(`⚠️ Samantha voice failed: ${azureError.message}`);
         }
         
-        const azureMsg = azureError.message === 'AZURE_NOT_CONFIGURED' ? 'Not configured' : 
-                        azureError.message === 'AZURE_INVALID_REGION' ? 'Invalid region' : 
-                        azureError.message;
-        throw new Error(`Azure TTS service failed: ${azureMsg}`);
+        throw new Error(`Azure TTS failed: ${azureError.message}`);
       }
       
     } catch (error) {
       console.error("Error generating speech:", error);
       
-      // Handle specific errors
-      if (error.message.includes('Not configured') || 
-                 error.message.includes('Invalid region')) {
-        res.status(500).json({ 
-          message: "Azure voice service needs proper configuration. Using enhanced browser voice.",
-          fallback: true,
-          needsSetup: true
-        });
-      } else {
-        res.status(500).json({ 
-          message: "Azure voice service temporarily unavailable. Using enhanced browser voice.",
-          fallback: true 
-        });
-      }
+      res.status(500).json({ 
+        message: "Sara voice temporarily unavailable. Please try again.",
+        error: error.message
+      });
     }
   });
 

@@ -31,33 +31,34 @@ export const AZURE_CHILDLIKE_VOICES: AzureTTSVoice[] = [
 
 export async function generateSpeechAzureTTS(
   text: string,
-  voiceName: string = "en-US-SaraNeural" // Always default to Sara
+  voiceName: string = 'en-US-SaraNeural' // Always default to Sara
 ): Promise<Buffer> {
   const speechKey = process.env.AZURE_SPEECH_KEY;
   const speechRegion = process.env.AZURE_SPEECH_REGION;
 
+  console.log(`🔊 Azure TTS: Using voice ${voiceName} in region ${speechRegion}`);
+
   if (!speechKey || speechKey.trim() === '' || speechKey === 'your_azure_speech_key_here' || speechKey.startsWith('#') ||
       !speechRegion || speechRegion.trim() === '' || speechRegion === 'your_azure_region_here' || speechRegion.startsWith('#')) {
-    console.log('⚠️ Azure Speech Service not configured - credentials missing or using placeholder values');
+    console.log('⚠️ Azure Speech Service not configured');
     throw new Error("AZURE_NOT_CONFIGURED");
   }
 
   const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
   speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
   
-  // Set endpoint (this might be needed for proper connection)
-  speechConfig.endpointId = undefined; // Use default endpoint
-  
-  // Use SSML for better voice control
+  // Use SSML for better voice control with child-optimized settings
   const ssml = `
     <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
       <voice name="${voiceName}">
-        <prosody rate="0.85" pitch="+10%">
+        <prosody rate="0.9" pitch="+5%">
           ${text}
         </prosody>
       </voice>
     </speak>
   `;
+
+  console.log(`🎵 Generating speech with SSML for ${voiceName}`);
 
   return new Promise((resolve, reject) => {
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
@@ -69,9 +70,10 @@ export async function generateSpeechAzureTTS(
         
         if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
           const audioBuffer = Buffer.from(result.audioData);
+          console.log(`✅ ${voiceName} synthesis completed: ${audioBuffer.length} bytes`);
           resolve(audioBuffer);
         } else {
-          console.log(`⚠️ Azure TTS synthesis failed: ${result.errorDetails}`);
+          console.log(`⚠️ ${voiceName} synthesis failed: ${result.errorDetails}`);
           if (result.errorDetails && result.errorDetails.includes('404')) {
             reject(new Error('AZURE_INVALID_REGION'));
           } else {
@@ -81,7 +83,7 @@ export async function generateSpeechAzureTTS(
       },
       (error) => {
         synthesizer.close();
-        console.log(`⚠️ Azure TTS connection error: ${error}`);
+        console.log(`⚠️ ${voiceName} connection error: ${error}`);
         if (error.includes('404') || error.includes('your_azure_region_here')) {
           reject(new Error('AZURE_INVALID_REGION'));
         } else {
