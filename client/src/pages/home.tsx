@@ -33,7 +33,27 @@ const BIBLE_VERSES = [
   { reference: "2 Timothy 1:7", text: "For the Spirit God gave us does not make us timid, but gives us power, love and self-discipline." },
   { reference: "Colossians 3:23", text: "Whatever you do, work at it with all your heart, as working for the Lord, not for human masters." },
   { reference: "1 John 4:19", text: "We love because he first loved us." },
-  { reference: "Psalm 37:4", text: "Take delight in the Lord, and he will give you the desires of your heart." }
+  { reference: "Psalm 37:4", text: "Take delight in the Lord, and he will give you the desires of your heart." },
+  { reference: "Matthew 6:26", text: "Look at the birds of the air; they do not sow or reap or store away in barns, and yet your heavenly Father feeds them. Are you not much more valuable than they?" },
+  { reference: "Psalm 27:1", text: "The Lord is my light and my salvation—whom shall I fear? The Lord is the stronghold of my life—of whom shall I be afraid?" },
+  { reference: "Romans 5:8", text: "But God demonstrates his own love for us in this: While we were still sinners, Christ died for us." },
+  { reference: "Philippians 4:6-7", text: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus." },
+  { reference: "1 John 1:9", text: "If we confess our sins, he is faithful and just and will forgive us our sins and purify us from all unrighteousness." },
+  { reference: "Psalm 34:18", text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit." },
+  { reference: "Isaiah 40:31", text: "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint." },
+  { reference: "Romans 10:9", text: "If you declare with your mouth, 'Jesus is Lord,' and believe in your heart that God raised him from the dead, you will be saved." },
+  { reference: "Psalm 91:1-2", text: "Whoever dwells in the shelter of the Most High will rest in the shadow of the Almighty. I will say of the Lord, 'He is my refuge and my fortress, my God, in whom I trust.'" },
+  { reference: "Matthew 5:16", text: "In the same way, let your light shine before others, that they may see your good deeds and glorify your Father in heaven." },
+  { reference: "2 Corinthians 5:17", text: "Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!" },
+  { reference: "Hebrews 13:5", text: "Keep your lives free from the love of money and be content with what you have, because God has said, 'Never will I leave you; never will I forsake you.'" },
+  { reference: "1 Thessalonians 5:16-18", text: "Rejoice always, pray continually, give thanks in all circumstances; for this is God's will for you in Christ Jesus." },
+  { reference: "Psalm 103:12", text: "As far as the east is from the west, so far has he removed our transgressions from us." },
+  { reference: "John 14:6", text: "Jesus answered, 'I am the way and the truth and the life. No one comes to the Father except through me.'" },
+  { reference: "Romans 6:23", text: "For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord." },
+  { reference: "Ephesians 6:10", text: "Finally, be strong in the Lord and in his mighty power." },
+  { reference: "Psalm 121:1-2", text: "I lift up my eyes to the mountains—where does my help come from? My help comes from the Lord, the Maker of heaven and earth." },
+  { reference: "John 15:13", text: "Greater love has no one than this: to lay down one's life for one's friends." },
+  { reference: "1 Corinthians 10:13", text: "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it." }
 ];
 
 interface BiblicalResponse {
@@ -521,28 +541,105 @@ export default function Home() {
   };
 
   const renderAnswerWithVerseLinks = (text: string) => {
-    // Find Bible verse references and make them clickable
-    const versePattern = /\b(\d?\s?[A-Za-z]+\s+\d+:\d+(?:-\d+)?)\b/g;
+    // Enhanced pattern to catch more Bible verse formats
+    const versePattern = /\b(\d?\s?[A-Za-z]+\.?\s+\d+:\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/g;
     const parts = text.split(versePattern);
     
     return parts.map((part, index) => {
+      // Clean up the reference for matching
+      const cleanPart = part.trim().replace(/\.$/, '');
+      
+      // Try to find exact match first
       const matchingVerse = BIBLE_VERSES.find(verse => 
-        verse.reference.toLowerCase().includes(part.toLowerCase().trim()) ||
-        part.toLowerCase().includes(verse.reference.toLowerCase())
+        verse.reference.toLowerCase() === cleanPart.toLowerCase()
       );
       
-      if (matchingVerse) {
+      // If no exact match, try partial matching
+      const partialMatch = !matchingVerse ? BIBLE_VERSES.find(verse => {
+        const verseRef = verse.reference.toLowerCase();
+        const partRef = cleanPart.toLowerCase();
+        
+        // Handle common variations
+        return verseRef.includes(partRef) || 
+               partRef.includes(verseRef) ||
+               verseRef.replace(/\s+/g, '').includes(partRef.replace(/\s+/g, '')) ||
+               partRef.replace(/\s+/g, '').includes(verseRef.replace(/\s+/g, ''))
+      }) : null;
+      
+      const foundVerse = matchingVerse || partialMatch;
+      
+      // Check if this looks like a Bible reference (has book name and chapter:verse)
+      const looksLikeBibleRef = /\b[A-Za-z]+\.?\s+\d+:\d+/.test(cleanPart);
+      
+      if (foundVerse) {
         return (
           <button
             key={index}
-            onClick={() => setSelectedVerse(matchingVerse)}
-            className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer"
+            onClick={() => setSelectedVerse(foundVerse)}
+            className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+            title={`Click to read ${foundVerse.reference}`}
           >
             {part}
           </button>
         );
+      } else if (looksLikeBibleRef) {
+        // Even if we don't have the verse text, make it look like a reference
+        return (
+          <span
+            key={index}
+            className="text-blue-600 font-medium cursor-help"
+            title="Bible verse reference"
+          >
+            {part}
+          </span>
+        );
       }
+      
       return <span key={index}>{part}</span>;
+    });
+  };
+
+  const renderScriptureReferences = (references: string) => {
+    // Split by common separators and process each reference
+    const refs = references.split(/[,;]|\sand\s/).map(ref => ref.trim()).filter(ref => ref.length > 0);
+    
+    return refs.map((ref, index) => {
+      const cleanRef = ref.replace(/\.$/, '').trim();
+      
+      // Try to find exact match first
+      const matchingVerse = BIBLE_VERSES.find(verse => 
+        verse.reference.toLowerCase() === cleanRef.toLowerCase()
+      );
+      
+      // If no exact match, try partial matching
+      const partialMatch = !matchingVerse ? BIBLE_VERSES.find(verse => {
+        const verseRef = verse.reference.toLowerCase();
+        const refLower = cleanRef.toLowerCase();
+        
+        return verseRef.includes(refLower) || 
+               refLower.includes(verseRef) ||
+               verseRef.replace(/\s+/g, '').includes(refLower.replace(/\s+/g, '')) ||
+               refLower.replace(/\s+/g, '').includes(verseRef.replace(/\s+/g, ''))
+      }) : null;
+      
+      const foundVerse = matchingVerse || partialMatch;
+      
+      return (
+        <span key={index}>
+          {foundVerse ? (
+            <button
+              onClick={() => setSelectedVerse(foundVerse)}
+              className="text-blue-600 hover:text-blue-800 underline font-medium cursor-pointer hover:bg-blue-50 px-1 py-0.5 rounded transition-colors"
+              title={`Click to read ${foundVerse.reference}`}
+            >
+              {ref}
+            </button>
+          ) : (
+            <span className="text-blue-600 font-medium">{ref}</span>
+          )}
+          {index < refs.length - 1 && <span className="text-blue-700">, </span>}
+        </span>
+      );
     });
   };
 
@@ -772,7 +869,7 @@ export default function Home() {
                       <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mb-4">
                         <h4 className="font-semibold text-blue-800 mb-2">📖 Scripture References:</h4>
                         <p className="text-blue-700">
-                          {renderAnswerWithVerseLinks(response.scriptureReferences)}
+                          {renderScriptureReferences(response.scriptureReferences)}
                         </p>
                       </div>
                     )}
@@ -794,14 +891,59 @@ export default function Home() {
 
         {/* Bible Verse Dialog */}
         <Dialog open={!!selectedVerse} onOpenChange={() => setSelectedVerse(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold text-blue-800">
                 📖 {selectedVerse?.reference}
               </DialogTitle>
             </DialogHeader>
-            <div className="mt-4">
-              <p className="text-lg leading-relaxed text-gray-700 italic">
+            <div className="mt-6 space-y-4">
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <p className="text-lg leading-relaxed text-gray-800 italic font-medium">
+                  "{selectedVerse?.text}"
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  Click anywhere outside this box to close
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Enhanced Bible Verse Popup with better styling */}
+        {selectedVerse && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-blue-800 flex items-center gap-2">
+                    📖 {selectedVerse.reference}
+                  </h3>
+                  <button
+                    onClick={() => setSelectedVerse(null)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border-l-4 border-blue-400">
+                  <p className="text-xl leading-relaxed text-gray-800 italic font-medium">
+                    "{selectedVerse.text}"
+                  </p>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-500">
+                    Click the × or outside this box to close
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
                 "{selectedVerse?.text}"
               </p>
             </div>
