@@ -13,6 +13,27 @@ export interface BiblicalResponse {
 
 export async function askMaggieBibleQuestion(question: string): Promise<BiblicalResponse> {
   try {
+    // Analyze the question to determine topic for smart resource recommendations
+    const questionLower = question.toLowerCase();
+    let resourceRecommendations = "";
+    
+    if (questionLower.includes('salvation') || questionLower.includes('saved') || questionLower.includes('gospel') || questionLower.includes('eternal life')) {
+      resourceRecommendations = "[Gospel Project for Kids](https://gospelproject.lifeway.com/kids/), [Bible for Children - Salvation Stories](https://bibleforchildren.org/languages/english/stories/nt/salvation)";
+    } else if (questionLower.includes('bible story') || questionLower.includes('character') || questionLower.includes('david') || questionLower.includes('moses') || questionLower.includes('noah')) {
+      resourceRecommendations = "[The Bible Project - Bible Stories](https://bibleproject.com/explore/video/), [Trueway Kids - Bible Characters](https://truewaykids.com/bible-characters/)";
+    } else if (questionLower.includes('prayer') || questionLower.includes('worship') || questionLower.includes('praise')) {
+      resourceRecommendations = "[Focus on the Family - Prayer for Kids](https://focusonthefamily.com/parenting/age-appropriate-chores/prayer-for-kids/), [Creative Bible Study - Prayer Activities](https://creativebiblestudy.com/prayer-activities-for-kids/)";
+    } else if (questionLower.includes('family') || questionLower.includes('parent') || questionLower.includes('relationship') || questionLower.includes('love')) {
+      resourceRecommendations = "[Focus on the Family - Christian Parenting](https://focusonthefamily.com/parenting/), [Trueway Kids - Family Devotions](https://truewaykids.com/family-devotions/)";
+    } else if (questionLower.includes('god') && (questionLower.includes('love') || questionLower.includes('care'))) {
+      resourceRecommendations = "[Bible for Children - God's Love Stories](https://bibleforchildren.org/languages/english/stories/), [The Bible Project - God's Character](https://bibleproject.com/explore/god/)";
+    } else if (questionLower.includes('difficult') || questionLower.includes('hard') || questionLower.includes('understand') || questionLower.includes('why')) {
+      resourceRecommendations = "[Creative Bible Study - Tough Questions](https://creativebiblestudy.com/tough-bible-questions/), [Focus on the Family - Answering Kids' Questions](https://focusonthefamily.com/parenting/answering-kids-tough-questions/)";
+    } else {
+      // Default recommendations for general questions
+      resourceRecommendations = "[The Bible Project - Bible Overview](https://bibleproject.com/explore/), [Trueway Kids - Bible Lessons](https://truewaykids.com/bible-lessons/)";
+    }
+
     const prompt = `You are Maggie, a friendly and wise dog who provides biblical guidance based on the New Testament covenant of Grace and God's Love as taught by Tim Keller, Andrew Farley, and other grace-centered theologians.
 
 Please respond to this biblical question with warmth, wisdom, and biblical accuracy: "${question}"
@@ -24,7 +45,7 @@ Please respond in JSON format with the following structure:
 {
   "answer": "Your warm, biblical response here",
   "scriptureReferences": "Relevant Bible verse citations",
-  "recommendedResources": "Choose 2-3 age-appropriate Christian websites with clickable links formatted as: [Website Name](https://website.com) from: [The Bible Project](https://bibleproject.com), [Trueway Kids](https://truewaykids.com), [Focus on the Family](https://focusonthefamily.com), [Creative Bible Study](https://creativebiblestudy.com), [Gospel Project](https://gospelproject.lifeway.com), [Bible for Children](https://bibleforchildren.org)"
+  "recommendedResources": "${resourceRecommendations}"
 }`;
 
     const response = await openai.chat.completions.create({
