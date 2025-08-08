@@ -107,14 +107,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Text is required" });
       }
 
-      // FORCE Sara voice - ignore any other voice requests
-      const saraVoice = 'en-US-SaraNeural';
-      console.log(`🔊 FORCING Sara voice (ignoring request for: ${voiceName})`);
+      console.log(`🔊 Speech generation request for: "${text.substring(0, 50)}..."`);
+      console.log(`🎵 Requested voice: ${voiceName || 'default'}`);
+      
+      // Always use Sara voice as primary
+      const targetVoice = 'en-US-SaraNeural';
+      console.log(`🎯 Using Sara voice: ${targetVoice}`);
       
       try {
-        const azureAudioBuffer = await generateSpeechAzureTTS(text, saraVoice);
+        const azureAudioBuffer = await generateSpeechAzureTTS(text, targetVoice);
         
-        console.log(`✅ Sara voice succeeded: ${azureAudioBuffer.byteLength} bytes`);
+        console.log(`✅ Sara voice synthesis successful: ${azureAudioBuffer.byteLength} bytes`);
         
         // Set appropriate headers for audio response
         res.setHeader('Content-Type', 'audio/mpeg');
@@ -125,11 +128,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.send(azureAudioBuffer);
         
       } catch (azureError) {
-        console.log(`⚠️ Sara voice failed: ${azureError.message}`);
+        console.error(`⚠️ Sara voice failed: ${azureError.message}`);
+        
+        // Provide detailed error information
+        if (azureError.message.includes('AZURE_SPEECH_KEY_MISSING')) {
+          return res.status(500).json({ 
+            message: "Azure Speech Service not configured - missing API key",
+            error: "MISSING_API_KEY"
+          });
+        }
+        
+        if (azureError.message.includes('AZURE_SPEECH_REGION_MISSING')) {
+          return res.status(500).json({ 
+            message: "Azure Speech Service not configured - missing region",
+            error: "MISSING_REGION"
+          });
+        }
+        
+        if (azureError.message.includes('AZURE_AUTH_FAILED')) {
+          return res.status(500).json({ 
+            message: "Azure Speech Service authentication failed - check your API key",
+            error: "AUTH_FAILED"
+          });
+        }
+        
+        if (azureError.message.includes('AZURE_CONNECTION_FAILED')) {
+          return res.status(500).json({ 
+            message: "Azure Speech Service connection failed - check your region",
+            error: "CONNECTION_FAILED"
+          });
+        }
         
         // Only use Samantha as absolute last resort
         try {
-          console.log(`🚨 EMERGENCY: Trying Samantha as last resort`);
+          console.warn(`🚨 EMERGENCY FALLBACK: Trying Samantha as last resort`);
           const emergencyBuffer = await generateSpeechAzureTTS(text, 'en-US-SamanthaNeural');
           
           res.setHeader('Content-Type', 'audio/mpeg');
@@ -137,12 +169,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.setHeader('Cache-Control', 'public, max-age=3600');
           res.setHeader('X-Voice-Used', 'Emergency Fallback');
           
-          console.log(`✅ Emergency Samantha succeeded: ${emergencyBuffer.byteLength} bytes`);
+          console.warn(`⚠️ Emergency Samantha succeeded: ${emergencyBuffer.byteLength} bytes`);
           return res.send(emergencyBuffer);
           
         } catch (emergencyError) {
-          console.log(`💥 TOTAL FAILURE: Both Sara and emergency Samantha failed`);
-          throw new Error(`All voices failed: Sara (${azureError.message}), Samantha (${emergencyError.message})`);
+          console.error(`💥 TOTAL FAILURE: Both Sara and emergency Samantha failed`);
+          console.error(`   Sara error: ${azureError.message}`);
+          console.error(`   Samantha error: ${emergencyError.message}`);
+          
+          return res.status(500).json({ 
+            message: "All Azure voices failed. Please check your Azure Speech Service configuration.",
+            error: "ALL_VOICES_FAILED",
+            details: {
+              sara: azureError.message,
+              samantha: emergencyError.message
+            }
+          });
         }
       }
       
@@ -150,8 +192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating speech:", error);
       
       res.status(500).json({ 
-        message: "Sara voice temporarily unavailable. Please try again.",
-        error: error.message
+        message: "Speech generation failed. Please check server configuration.",
+        error: error.message,
+        type: "GENERAL_ERROR"
       });
     }
   });

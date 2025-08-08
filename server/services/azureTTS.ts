@@ -25,7 +25,7 @@ export const AZURE_CHILDLIKE_VOICES: AzureTTSVoice[] = [
     gender: "Female",
     locale: "en-US",
     age: "Young Adult",
-    description: "Fallback voice when Sara is unavailable"
+    description: "Emergency fallback voice only"
   }
 ];
 
@@ -33,68 +33,88 @@ export async function generateSpeechAzureTTS(
   text: string,
   voiceName: string = 'en-US-SaraNeural'
 ): Promise<Buffer> {
+  console.log(`🔊 Azure TTS: Starting speech generation with ${voiceName}`);
+  
   const speechKey = process.env.AZURE_SPEECH_KEY;
   const speechRegion = process.env.AZURE_SPEECH_REGION;
 
-  console.log(`🔊 Azure TTS: Generating speech with ${voiceName} in region ${speechRegion}`);
+  console.log(`🔑 Azure Config Check:`);
+  console.log(`   Speech Key: ${speechKey ? 'SET (' + speechKey.substring(0, 8) + '...)' : 'NOT SET'}`);
+  console.log(`   Speech Region: ${speechRegion || 'NOT SET'}`);
 
-  if (!speechKey || speechKey.trim() === '' || speechKey === 'your_azure_speech_key_here' || speechKey.startsWith('#') ||
-      !speechRegion || speechRegion.trim() === '' || speechRegion === 'your_azure_region_here' || speechRegion.startsWith('#')) {
-    console.error('⚠️ Azure Speech Service not configured properly');
-    throw new Error("AZURE_NOT_CONFIGURED");
+  // Check if Azure is properly configured
+  if (!speechKey || speechKey.trim() === '' || speechKey === 'your_azure_speech_key_here' || speechKey.startsWith('#')) {
+    console.error('❌ AZURE_SPEECH_KEY is not configured properly');
+    throw new Error("AZURE_SPEECH_KEY_MISSING");
   }
 
-  const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
-  speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
-  
-  // Optimized SSML for Sara's child voice
-  const ssml = `
-    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-      <voice name="${voiceName}">
-        <prosody rate="0.85" pitch="+8%">
-          ${text}
-        </prosody>
-      </voice>
-    </speak>
-  `;
+  if (!speechRegion || speechRegion.trim() === '' || speechRegion === 'your_azure_region_here' || speechRegion.startsWith('#')) {
+    console.error('❌ AZURE_SPEECH_REGION is not configured properly');
+    throw new Error("AZURE_SPEECH_REGION_MISSING");
+  }
 
-  console.log(`🎵 Synthesizing with ${voiceName}...`);
+  try {
+    console.log(`🎵 Creating speech config for region: ${speechRegion}`);
+    const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
+    speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+    
+    // Optimized SSML for Sara's child voice
+    const ssml = `
+      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+        <voice name="${voiceName}">
+          <prosody rate="0.9" pitch="+5%">
+            ${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+          </prosody>
+        </voice>
+      </speak>
+    `;
 
-  return new Promise((resolve, reject) => {
-    const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+    console.log(`🎤 Synthesizing with ${voiceName}...`);
 
-    synthesizer.speakSsmlAsync(
-      ssml,
-      (result) => {
-        synthesizer.close();
-        
-        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-          const audioBuffer = Buffer.from(result.audioData);
-          console.log(`✅ SUCCESS: ${voiceName} generated ${audioBuffer.length} bytes`);
-          resolve(audioBuffer);
-        } else {
-          console.error(`❌ SYNTHESIS FAILED for ${voiceName}: ${result.errorDetails}`);
-          if (result.errorDetails && result.errorDetails.includes('404')) {
-            reject(new Error('AZURE_INVALID_REGION'));
+    return new Promise((resolve, reject) => {
+      const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+
+      synthesizer.speakSsmlAsync(
+        ssml,
+        (result) => {
+          synthesizer.close();
+          
+          if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+            const audioBuffer = Buffer.from(result.audioData);
+            console.log(`✅ SUCCESS: ${voiceName} generated ${audioBuffer.length} bytes`);
+            resolve(audioBuffer);
+          } else if (result.reason === sdk.ResultReason.Canceled) {
+            const cancellation = sdk.CancellationDetails.fromResult(result);
+            console.error(`❌ SYNTHESIS CANCELED for ${voiceName}:`);
+            console.error(`   Reason: ${cancellation.reason}`);
+            console.error(`   Error Code: ${cancellation.errorCode}`);
+            console.error(`   Error Details: ${cancellation.errorDetails}`);
+            
+            if (cancellation.errorCode === sdk.CancellationErrorCode.ConnectionFailure) {
+              reject(new Error('AZURE_CONNECTION_FAILED'));
+            } else if (cancellation.errorCode === sdk.CancellationErrorCode.AuthenticationFailure) {
+              reject(new Error('AZURE_AUTH_FAILED'));
+            } else {
+              reject(new Error(`SYNTHESIS_CANCELED: ${cancellation.errorDetails}`));
+            }
           } else {
+            console.error(`❌ SYNTHESIS FAILED for ${voiceName}: ${result.errorDetails}`);
             reject(new Error(`SYNTHESIS_ERROR: ${result.errorDetails}`));
           }
+        },
+        (error) => {
+          synthesizer.close();
+          console.error(`💥 ${voiceName} synthesis error:`, error);
+          reject(new Error(`SYNTHESIS_EXCEPTION: ${error}`));
         }
-      },
-      (error) => {
-        synthesizer.close();
-        console.log(`⚠️ ${voiceName} connection error: ${error}`);
-        if (error.includes('404') || error.includes('your_azure_region_here')) {
-          reject(new Error('INVALID_REGION'));
-        } else {
-          reject(new Error(`CONNECTION_ERROR: ${error}`));
-        }
-      }
-    );
-  });
+      );
+    });
+  } catch (error) {
+    console.error(`💥 Azure TTS setup error:`, error);
+    throw new Error(`AZURE_SETUP_ERROR: ${error.message}`);
+  }
 }
 
 export async function getAzureTTSVoices(): Promise<AzureTTSVoice[]> {
-  // Return our curated list of child-friendly voices
   return AZURE_CHILDLIKE_VOICES;
 }
