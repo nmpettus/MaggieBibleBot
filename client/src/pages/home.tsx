@@ -557,44 +557,8 @@ export default function Home() {
         {response && (
           <Card className="glass-card mb-6">
             <CardContent className="p-6">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-200 flex-shrink-0">
-                  <img 
-                    src="https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" 
-                    alt="Maggie" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 mb-2">Maggie's Response:</h3>
-                  <div className="prose prose-blue max-w-none">
-                    <p className="text-gray-700 leading-relaxed mb-4">
-                      {renderAnswerWithHighlighting(response.answer)}
-                    </p>
-                    
-                    {response.scriptureReferences && (
-                      <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mb-4">
-                        <h4 className="font-semibold text-blue-800 mb-2">📖 Scripture References:</h4>
-                        <p className="text-blue-700">
-                          {renderAnswerWithVerseLinks(response.scriptureReferences)}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {response.recommendedResources && (
-                      <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                        <h4 className="font-semibold text-green-800 mb-2">🌟 Recommended Resources:</h4>
-                        <p className="text-green-700">
-                          {renderRecommendedResources(response.recommendedResources)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ENHANCED AUDIO CONTROLS */}
-              <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-blue-200 shadow-lg">
+              {/* SARA'S VOICE CONTROLS - MOVED TO TOP */}
+              <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-blue-200 shadow-lg">
                 {/* Sara Voice Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -683,6 +647,42 @@ export default function Home() {
                     Words: {words.length} | 
                     Current Word: {currentWordIndex + 1}
                   </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-blue-200 flex-shrink-0">
+                  <img 
+                    src="https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop" 
+                    alt="Maggie" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-800 mb-2">Maggie's Response:</h3>
+                  <div className="prose prose-blue max-w-none">
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      {renderAnswerWithHighlighting(response.answer)}
+                    </p>
+                    
+                    {response.scriptureReferences && (
+                      <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 mb-4">
+                        <h4 className="font-semibold text-blue-800 mb-2">📖 Scripture References:</h4>
+                        <p className="text-blue-700">
+                          {renderAnswerWithVerseLinks(response.scriptureReferences)}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {response.recommendedResources && (
+                      <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
+                        <h4 className="font-semibold text-green-800 mb-2">🌟 Recommended Resources:</h4>
+                        <p className="text-green-700">
+                          {renderRecommendedResources(response.recommendedResources)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
