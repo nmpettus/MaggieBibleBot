@@ -317,48 +317,19 @@ export default function Home() {
   const tryDirectBibleAPI = async (reference: string) => {
     try {
       console.log(`🔄 Trying direct Bible API for: ${reference}`);
+      const apiUrl = `https://bible-api.com/${encodeURIComponent(reference)}`;
+      const response = await fetch(apiUrl);
       
-      // Clean and normalize the reference
-      const cleanRef = reference.trim().replace(/[^\w\s:-]/g, '');
-      
-      // Try bible.com API first
-      try {
-        const apiUrl = `https://www.bible.com/json/bible/verse/${encodeURIComponent(cleanRef)}`;
-        const response = await fetch(apiUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; BibleApp/1.0)',
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.verse && data.verse.text && data.verse.text.trim()) {
-            return {
-              text: data.verse.text.trim(),
-              reference: data.verse.reference || reference
-            };
-          }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text && data.text.trim()) {
+          console.log(`✅ Direct Bible API success`);
+          setSelectedVerse({
+            reference: data.reference || reference,
+            text: data.text.trim()
+          });
+          return;
         }
-      } catch (error) {
-        console.log(`⚠️ Bible.com direct failed: ${error.message}`);
-      }
-      
-      // Try bible-api.com as direct fallback
-      try {
-        const apiUrl = `https://bible-api.com/${encodeURIComponent(cleanRef)}`;
-        const response = await fetch(apiUrl);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.text && data.text.trim()) {
-            return {
-              text: data.text.trim(),
-              reference: data.reference || reference
-            };
-          }
-        }
-      } catch (error) {
-        console.log(`⚠️ bible-api.com direct failed: ${error.message}`);
       }
       
       // Final fallback - show error message
