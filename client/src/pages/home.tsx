@@ -156,40 +156,6 @@ const BIBLE_VERSES = [
   { reference: "Revelation 21:4", text: "He will wipe every tear from their eyes. There will be no more death or mourning or crying or pain, for the old order of things has passed away." }
 ];
 
-// Dynamic Bible verse lookup function
-const lookupBibleVerse = async (reference: string) => {
-  console.log(`🔍 Looking up verse: ${reference}`);
-  setLoadingVerse(reference);
-  
-  try {
-    const response = await fetch(`/api/bible-verse/${encodeURIComponent(reference)}`);
-    
-    if (response.ok) {
-      const verse = await response.json();
-      console.log(`✅ Found verse:`, verse);
-      
-      setSelectedVerse({
-        reference: verse.reference,
-        text: verse.text
-      });
-    } else {
-      console.log(`❌ Verse not found: ${reference}`);
-      setSelectedVerse({
-        reference: reference,
-        text: `Sorry, I couldn't find the text for ${reference}. This verse may not be available in our current Bible translation or the reference format might need adjustment.`
-      });
-    }
-  } catch (error) {
-    console.error(`💥 Error looking up verse ${reference}:`, error);
-    setSelectedVerse({
-      reference: reference,
-      text: `I'm having trouble looking up ${reference} right now. Please try again in a moment.`
-    });
-  } finally {
-    setLoadingVerse(null);
-  }
-};
-
 interface BiblicalResponse {
   id: number;
   question: string;
