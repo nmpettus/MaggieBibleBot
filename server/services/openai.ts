@@ -83,13 +83,20 @@ export async function askMaggieBibleQuestion(question: string): Promise<Biblical
 
 Please respond to this biblical question with warmth, wisdom, and biblical accuracy: "${question}"
 
-CRITICAL INSTRUCTIONS:
-- Focus on grace, love, and the finished work of Christ
-- Include age-appropriate website recommendations for further study
-- When you mention a Bible verse reference, you MUST include the full verse text immediately after the reference
-- NEVER say "Please look up this verse" or "Read this passage" - ALWAYS include the complete verse text
-- Format Bible references like this: "Romans 6:14 - 'For sin shall not have dominion over you: for ye are not under the law, but under grace.'"
-- If you don't know a verse text, don't mention that verse reference at all
+ABSOLUTE REQUIREMENTS - NEVER VIOLATE THESE:
+1. NEVER EVER say "Please look up this verse" or "Read this passage" or "This is a wonderful passage"
+2. NEVER tell users to look up verses themselves
+3. If you mention a Bible verse, you MUST include the complete text
+4. If you don't know the verse text, DO NOT mention that verse at all
+5. Focus on grace, love, and the finished work of Christ
+6. Format like: "Romans 6:14 - 'For sin shall not have dominion over you: for ye are not under the law, but under grace.'"
+
+FORBIDDEN PHRASES (NEVER USE):
+- "Please look up"
+- "Read this passage" 
+- "This is a wonderful passage"
+- "Check your Bible"
+- "You can find this in"
 
 Please respond in JSON format with the following structure:
 {
@@ -117,8 +124,30 @@ Please respond in JSON format with the following structure:
 
     let result = JSON.parse(response.choices[0].message.content || "{}");
     
-    // Post-process the answer to include Bible verse texts
+    // AGGRESSIVELY remove any "Please look up" language
     if (result.answer) {
+      // Remove all variations of "Please look up" phrases
+      result.answer = result.answer.replace(
+        /[.\s]*Please look up[^.!?]*[.!?]/gi,
+        ''
+      );
+      result.answer = result.answer.replace(
+        /[.\s]*This is a wonderful passage[^.!?]*[.!?]/gi,
+        ''
+      );
+      result.answer = result.answer.replace(
+        /[.\s]*Read this passage[^.!?]*[.!?]/gi,
+        ''
+      );
+      result.answer = result.answer.replace(
+        /[.\s]*Check your Bible[^.!?]*[.!?]/gi,
+        ''
+      );
+      result.answer = result.answer.replace(
+        /[.\s]*You can find this in[^.!?]*[.!?]/gi,
+        ''
+      );
+      
       // Find Bible references in the answer and replace with full verses
       result.answer = result.answer.replace(
         /"([^"]*(?:\d+\s*\w+\s*\d+[:\-\d]*[^"]*))"/g,
@@ -142,16 +171,9 @@ Please respond in JSON format with the following structure:
           return match;
         }
       );
-      
-      // Remove any remaining "Please look up" phrases
-      result.answer = result.answer.replace(
-        /[.\s]*Please look up this verse[^.!?]*[.!?]/gi,
-        ''
-      );
-      result.answer = result.answer.replace(
-        /[.\s]*This is a wonderful passage[^.!?]*[.!?]/gi,
-        ''
-      );
+
+      // Clean up any double spaces or awkward formatting
+      result.answer = result.answer.replace(/\s+/g, ' ').trim();
     }
     
     return {
