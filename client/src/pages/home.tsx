@@ -783,7 +783,6 @@ export default function Home() {
             {parts[i + 1]}
           </a>
         );
-      }
     }
     
     return result;
