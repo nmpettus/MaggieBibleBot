@@ -250,35 +250,9 @@ export default function Home() {
       const altResponse = await fetch(`https://labs.bible.org/api/?passage=${encodeURIComponent(cleanRef)}&type=json`);
       
       if (altResponse.ok) {
-      // Try multiple Bible APIs directly as fallback
+        const altData = await altResponse.json();
         
-        console.log(`🌐 Trying Bible.com API directly for: ${reference}`);
-        const bibleComResponse = await fetch(`https://www.bible.com/json/bible/verse/${encodeURIComponent(reference)}`, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; BibleApp/1.0)',
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (bibleComResponse.ok) {
-          const data = await bibleComResponse.json();
-          if (data.verse && data.verse.text) {
-            console.log(`✅ Bible.com direct success: ${data.verse.reference}`);
-            setSelectedVerse({
-              reference: data.verse.reference || reference,
-              text: data.verse.text,
-              isLoading: false
-            });
-            return;
-          }
-        }
-      } catch (error) {
-        console.log(`⚠️ Bible.com direct failed: ${error.message}`);
-      }
-      
-      // Try bible-api.com as backup
-      try {
-        console.log(`🌐 Trying bible-api.com directly for: ${reference}`);
+        if (altData && altData[0] && altData[0].text) {
           return {
             reference: `${altData[0].bookname} ${altData[0].chapter}:${altData[0].verse}`,
             text: altData[0].text.trim()
@@ -292,6 +266,84 @@ export default function Home() {
       return null;
     } finally {
       setLoadingVerse(false);
+    }
+  };
+
+  const handleScriptureClick = async (reference: string) => {
+    console.log(`🔍 Scripture clicked: ${reference}`);
+    
+    // Show loading immediately
+    setSelectedVerse({
+      reference: reference,
+      text: "⏳ Loading verse..."
+    });
+
+    try {
+      // First check local database
+      const localVerse = BIBLE_VERSES.find(verse => 
+        verse.reference.toLowerCase().includes(reference.toLowerCase()) ||
+        reference.toLowerCase().includes(verse.reference.toLowerCase())
+      );
+      
+      if (localVerse) {
+        console.log(`✅ Found in local database: ${localVerse.reference}`);
+        setSelectedVerse(localVerse);
+        return;
+      }
+
+      // Fetch from server API
+      console.log(`🌐 Fetching from server API: ${reference}`);
+      const response = await fetch(`/api/bible-verse/${encodeURIComponent(reference)}`);
+      
+      if (response.ok) {
+        const verseData = await response.json();
+        console.log(`✅ Server API success:`, verseData);
+        setSelectedVerse({
+          reference: verseData.reference || reference,
+          text: verseData.text
+        });
+      } else {
+        console.error(`❌ Server API failed: ${response.status}`);
+        // Try direct Bible API as fallback
+        await tryDirectBibleAPI(reference);
+      }
+    } catch (error) {
+      console.error(`💥 Error in handleScriptureClick:`, error);
+      await tryDirectBibleAPI(reference);
+    }
+  };
+
+  // Fallback function to try Bible API directly from frontend
+  const tryDirectBibleAPI = async (reference: string) => {
+    try {
+      console.log(`🔄 Trying direct Bible API for: ${reference}`);
+      const apiUrl = `https://bible-api.com/${encodeURIComponent(reference)}`;
+      const response = await fetch(apiUrl);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text && data.text.trim()) {
+          console.log(`✅ Direct Bible API success`);
+          setSelectedVerse({
+            reference: data.reference || reference,
+            text: data.text.trim()
+          });
+          return;
+        }
+      }
+      
+      // Final fallback - show error message
+      setSelectedVerse({
+        reference: reference,
+        text: `Unable to load verse: ${reference}. This may be due to network issues or the verse reference format.`
+      });
+      
+    } catch (error) {
+      console.error(`💥 Direct Bible API failed:`, error);
+      setSelectedVerse({
+        reference: reference,
+        text: `Failed to load verse: ${reference}. Please check your internet connection.`
+      });
     }
   };
 
