@@ -124,27 +124,77 @@ Please respond in JSON format with the following structure:
 
     let result = JSON.parse(response.choices[0].message.content || "{}");
     
-    // AGGRESSIVELY remove any "Please look up" language
+    // NUCLEAR OPTION: Remove ALL variations of "Please look up" and similar phrases
     if (result.answer) {
-      // Remove all variations of "Please look up" phrases
+      // Remove "Please look up" in all forms
       result.answer = result.answer.replace(
-        /[.\s]*Please look up[^.!?]*[.!?]/gi,
+        /[^.!?]*Please look up[^.!?]*[.!?]?/gi,
         ''
       );
+      
+      // Remove "This is a wonderful passage"
       result.answer = result.answer.replace(
-        /[.\s]*This is a wonderful passage[^.!?]*[.!?]/gi,
+        /[^.!?]*This is a wonderful passage[^.!?]*[.!?]?/gi,
         ''
       );
+      
+      // Remove "Read this passage"
       result.answer = result.answer.replace(
-        /[.\s]*Read this passage[^.!?]*[.!?]/gi,
+        /[^.!?]*Read this passage[^.!?]*[.!?]?/gi,
         ''
       );
+      
+      // Remove "Check your Bible"
       result.answer = result.answer.replace(
-        /[.\s]*Check your Bible[^.!?]*[.!?]/gi,
+        /[^.!?]*Check your Bible[^.!?]*[.!?]?/gi,
         ''
       );
+      
+      // Remove "You can find this in"
       result.answer = result.answer.replace(
-        /[.\s]*You can find this in[^.!?]*[.!?]/gi,
+        /[^.!?]*You can find this in[^.!?]*[.!?]?/gi,
+        ''
+      );
+      
+      // Remove "Look up this verse"
+      result.answer = result.answer.replace(
+        /[^.!?]*Look up this verse[^.!?]*[.!?]?/gi,
+        ''
+      );
+      
+      // Remove "Please read"
+      result.answer = result.answer.replace(
+        /[^.!?]*Please read[^.!?]*[.!?]?/gi,
+        ''
+      );
+      
+      // Remove "I encourage you to read"
+      result.answer = result.answer.replace(
+        /[^.!?]*I encourage you to read[^.!?]*[.!?]?/gi,
+        ''
+      );
+      
+      // Remove "Take a look at"
+      result.answer = result.answer.replace(
+        /[^.!?]*Take a look at[^.!?]*[.!?]?/gi,
+        ''
+      );
+      
+      // Remove any sentence that contains "look" + "verse" or "passage"
+      result.answer = result.answer.replace(
+        /[^.!?]*\b(look|read|check|find)\b[^.!?]*\b(verse|passage|scripture|Bible)\b[^.!?]*[.!?]?/gi,
+        ''
+      );
+      
+      // Remove quotes around verse references that don't have verse text
+      result.answer = result.answer.replace(
+        /"([^"]*\d+[:\-\d]*[^"]*)"(?!\s*-\s*")/g,
+        '$1'
+      );
+      
+      // Remove any remaining fragments that start with common lookup phrases
+      result.answer = result.answer.replace(
+        /\b(Please|I encourage|Take a|You can|Check|Look|Read)\s+[^.!?]*\b(verse|passage|scripture|Bible)\b[^.!?]*[.!?]?/gi,
         ''
       );
       
