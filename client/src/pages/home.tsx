@@ -175,6 +175,7 @@ export default function Home() {
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [words, setWords] = useState<string[]>([]);
   const [selectedVerse, setSelectedVerse] = useState<{reference: string, text: string} | null>(null);
+  const [loadingVerse, setLoadingVerse] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const highlightTimeoutRef = useRef<NodeJS.Timeout[]>([]);
@@ -221,6 +222,51 @@ export default function Home() {
   const stopListening = () => {
     setIsListening(false);
     SpeechRecognition.stopListening();
+  };
+
+  // Dynamic scripture lookup function
+  const lookupScripture = async (reference: string): Promise<{reference: string, text: string} | null> => {
+    try {
+      setLoadingVerse(true);
+      
+      // Clean and normalize the reference
+      const cleanRef = reference.trim().replace(/[^\w\s:-]/g, '');
+      
+      // Use Bible API to fetch the verse
+      const response = await fetch(`https://bible-api.com/${encodeURIComponent(cleanRef)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.text && data.reference) {
+          return {
+            reference: data.reference,
+            text: data.text.trim()
+          };
+        }
+      }
+      
+      // Fallback to alternative API
+      const altResponse = await fetch(`https://labs.bible.org/api/?passage=${encodeURIComponent(cleanRef)}&type=json`);
+      
+      if (altResponse.ok) {
+        const altData = await altResponse.json();
+        
+        if (altData && altData[0] && altData[0].text) {
+          return {
+            reference: `${altData[0].bookname} ${altData[0].chapter}:${altData[0].verse}`,
+            text: altData[0].text.trim()
+          };
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Scripture lookup error:', error);
+      return null;
+    } finally {
+      setLoadingVerse(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, voiceQuestion?: string) => {
@@ -1075,7 +1121,12 @@ export default function Home() {
         {/* Enhanced Bible Verse Popup with better styling */}
         {selectedVerse && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto relative">
+              {loadingVerse && (
+                <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10">
+                  <div className="text-blue-600 text-lg">Loading verse...</div>
+                </div>
+              )}
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="text-2xl font-bold text-blue-800 flex items-center gap-2">
