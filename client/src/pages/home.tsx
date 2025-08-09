@@ -175,7 +175,7 @@ export default function Home() {
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [words, setWords] = useState<string[]>([]);
   const [selectedVerse, setSelectedVerse] = useState<{reference: string, text: string} | null>(null);
-  const [loadingVerse, setLoadingVerse] = useState(false);
+  const [loadingVerse, setLoadingVerse] = useState<string | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const highlightTimeoutRef = useRef<NodeJS.Timeout[]>([]);
@@ -227,7 +227,7 @@ export default function Home() {
   // Dynamic scripture lookup function
   const lookupScripture = async (reference: string): Promise<{reference: string, text: string} | null> => {
     try {
-      setLoadingVerse(true);
+      setLoadingVerse(reference);
       
       // Clean and normalize the reference
       const cleanRef = reference.trim().replace(/[^\w\s:-]/g, '');
@@ -265,7 +265,7 @@ export default function Home() {
       console.error('Scripture lookup error:', error);
       return null;
     } finally {
-      setLoadingVerse(false);
+      setLoadingVerse(null);
     }
   };
 
