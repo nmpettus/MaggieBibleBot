@@ -6,6 +6,68 @@ import { askMaggieBibleQuestion } from "./services/openai";
 import { generateSpeechGoogleTTS, getGoogleTTSVoices } from "./services/googleTTS";
 import { generateSpeechAzureTTS, getAzureTTSVoices } from "./services/azureTTS";
 
+// Bible verse lookup function
+async function lookupBibleVerse(reference: string): Promise<{ text: string; reference: string } | null> {
+  try {
+    console.log(`🔍 Looking up Bible verse: ${reference}`);
+    
+    // Clean and format the reference for API call
+    const cleanRef = reference.trim().replace(/\s+/g, ' ');
+    
+    // Try bible-api.com first
+    try {
+      const apiUrl = `https://bible-api.com/${encodeURIComponent(cleanRef)}`;
+      console.log(`📖 Trying bible-api.com: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text && data.text.trim()) {
+          console.log(`✅ Found verse via bible-api.com: ${data.reference}`);
+          return {
+            text: data.text.trim(),
+            reference: data.reference || reference
+          };
+        }
+      }
+    } catch (error) {
+      console.log(`⚠️ bible-api.com failed: ${error.message}`);
+    }
+    
+    // Try ESV API as fallback
+    try {
+      const esvUrl = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(cleanRef)}&format=plain&include-headings=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
+      console.log(`📖 Trying ESV API: ${esvUrl}`);
+      
+      const response = await fetch(esvUrl, {
+        headers: {
+          'Authorization': 'Token anonymous'
+        }
+      });
+      
+      if (response.ok) {
+        const text = await response.text();
+        if (text && text.trim() && !text.includes('error')) {
+          console.log(`✅ Found verse via ESV API`);
+          return {
+            text: text.trim(),
+            reference: reference
+          };
+        }
+      }
+    } catch (error) {
+      console.log(`⚠️ ESV API failed: ${error.message}`);
+    }
+    
+    console.log(`❌ Could not find verse: ${reference}`);
+    return null;
+    
+  } catch (error) {
+    console.error(`💥 Bible lookup error for ${reference}:`, error);
+    return null;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Ask Maggie a Bible question
   app.post("/api/ask-maggie", async (req, res) => {
@@ -204,6 +266,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Content-Type', 'application/json');
     console.log('🧪 Test endpoint - headers set:', res.getHeaders());
     res.json({ message: 'Voice header test', headers: res.getHeaders() });
+  });
+
+  // Bible verse lookup endpoint
+  app.get("/api/bible-verse/:reference", async (req, res) => {
+    try {
+      const reference = decodeURIComponent(req.params.reference);
+      console.log(`📖 Bible verse lookup request: ${reference}`);
+      
+      const verse = await lookupBibleVerse(reference);
+      
+      if (verse) {
+        res.json(verse);
+      } else {
+        res.status(404).json({ 
+          message: `Could not find verse: ${reference}`,
+          reference: reference
+        });
+      }
+    } catch (error) {
+      console.error("Bible verse lookup error:", error);
+      res.status(500).json({ 
+        message: "Failed to lookup Bible verse",
+        error: error.message 
+      });
+    }
   });
 
   const httpServer = createServer(app);
