@@ -101,14 +101,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate speech with ElevenLabs Faith voice and Azure TTS fallback
   app.post("/api/generate-speech", async (req, res) => {
     try {
-      const { text, voiceName } = req.body;
+      const { text } = req.body;
       
       if (!text || text.trim().length === 0) {
         return res.status(400).json({ message: "Text is required" });
       }
 
       console.log(`🔊 Speech generation request for: "${text.substring(0, 50)}..."`);
-      console.log(`🎵 Requested voice: ${voiceName || 'default'}`);
       
       // Always use Sara voice as primary
       const targetVoice = 'en-US-SaraNeural';
@@ -196,17 +195,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error.message,
         type: "GENERAL_ERROR"
       });
-    }
-  });
-
-  // Get Azure TTS voices
-  app.get("/api/azure-voices", async (req, res) => {
-    try {
-      const voices = await getAzureTTSVoices();
-      res.json({ voices });
-    } catch (error) {
-      console.error("Error fetching Azure TTS voices:", error);
-      res.status(500).json({ message: "Unable to fetch Azure TTS voices" });
     }
   });
 
