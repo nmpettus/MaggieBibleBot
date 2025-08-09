@@ -647,6 +647,48 @@ export default function Home() {
     );
   };
 
+  // Helper function to normalize scripture references for better matching
+  const normalizeReference = (ref: string): string => {
+    return ref
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/first/g, '1')
+      .replace(/second/g, '2')
+      .replace(/third/g, '3')
+      .replace(/psalms/g, 'psalm')
+      .trim();
+  };
+
+  // Helper function to find verse by reference with fuzzy matching
+  const findVerseByReference = (normalizedRef: string) => {
+    // First try exact match
+    let match = BIBLE_VERSES.find(verse => 
+      normalizeReference(verse.reference) === normalizedRef
+    );
+    
+    if (match) return match;
+    
+    // Try partial matching - check if verse contains the reference or vice versa
+    match = BIBLE_VERSES.find(verse => {
+      const normalizedVerse = normalizeReference(verse.reference);
+      return normalizedVerse.includes(normalizedRef) || normalizedRef.includes(normalizedVerse);
+    });
+    
+    if (match) return match;
+    
+    // Try matching just the book and chapter
+    const bookChapterMatch = normalizedRef.match(/^(.+?)\s+(\d+)/);
+    if (bookChapterMatch) {
+      const [, book, chapter] = bookChapterMatch;
+      match = BIBLE_VERSES.find(verse => {
+        const normalizedVerse = normalizeReference(verse.reference);
+        return normalizedVerse.startsWith(`${book.trim()} ${chapter}`);
+      });
+    }
+    
+    return match;
+  };
+
   const renderAnswerWithVerseLinks = (text: string) => {
     // Enhanced pattern to catch ALL Bible verse formats including book names
     const versePattern = /\b((?:\d\s+)?(?:Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|1\s+Samuel|2\s+Samuel|1\s+Kings|2\s+Kings|1\s+Chronicles|2\s+Chronicles|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song\s+of\s+Songs|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|1\s+Corinthians|2\s+Corinthians|Galatians|Ephesians|Philippians|Colossians|1\s+Thessalonians|2\s+Thessalonians|1\s+Timothy|2\s+Timothy|Titus|Philemon|Hebrews|James|1\s+Peter|2\s+Peter|1\s+John|2\s+John|3\s+John|Jude|Revelation)\.?\s+\d+(?::\d+)?(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\b/gi;
