@@ -14,16 +14,42 @@ async function lookupBibleVerse(reference: string): Promise<{ text: string; refe
     // Clean and format the reference for API call
     const cleanRef = reference.trim().replace(/\s+/g, ' ');
     
-    // Try bible-api.com first
+    // Try YouVersion Bible.com API first
+    try {
+      const apiUrl = `https://www.bible.com/json/bible/verse/${encodeURIComponent(cleanRef)}`;
+      console.log(`📖 Trying Bible.com API: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; BibleApp/1.0)',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.verse && data.verse.text && data.verse.text.trim()) {
+          console.log(`✅ Found verse via Bible.com: ${data.verse.reference}`);
+          return {
+            text: data.verse.text.trim(),
+            reference: data.verse.reference || reference
+          };
+        }
+      }
+    } catch (error) {
+      console.log(`⚠️ Bible.com API failed: ${error.message}`);
+    }
+    
+    // Try bible-api.com as fallback
     try {
       const apiUrl = `https://bible-api.com/${encodeURIComponent(cleanRef)}`;
-      console.log(`📖 Trying bible-api.com: ${apiUrl}`);
+      console.log(`📖 Trying bible-api.com fallback: ${apiUrl}`);
       
       const response = await fetch(apiUrl);
       if (response.ok) {
         const data = await response.json();
         if (data.text && data.text.trim()) {
-          console.log(`✅ Found verse via bible-api.com: ${data.reference}`);
+          console.log(`✅ Found verse via bible-api.com fallback: ${data.reference}`);
           return {
             text: data.text.trim(),
             reference: data.reference || reference
@@ -31,32 +57,37 @@ async function lookupBibleVerse(reference: string): Promise<{ text: string; refe
         }
       }
     } catch (error) {
-      console.log(`⚠️ bible-api.com failed: ${error.message}`);
+      console.log(`⚠️ bible-api.com fallback failed: ${error.message}`);
     }
     
-    // Try ESV API as fallback
+    // Try getBible.net as final fallback
     try {
-      const esvUrl = `https://api.esv.org/v3/passage/text/?q=${encodeURIComponent(cleanRef)}&format=plain&include-headings=false&include-footnotes=false&include-verse-numbers=false&include-short-copyright=false&include-passage-references=false`;
-      console.log(`📖 Trying ESV API: ${esvUrl}`);
+      const apiUrl = `https://getbible.net/json?passage=${encodeURIComponent(cleanRef)}&version=kjv`;
+      console.log(`📖 Trying getBible.net final fallback: ${apiUrl}`);
       
-      const response = await fetch(esvUrl, {
-        headers: {
-          'Authorization': 'Token anonymous'
-        }
-      });
-      
+      const response = await fetch(apiUrl);
       if (response.ok) {
         const text = await response.text();
-        if (text && text.trim() && !text.includes('error')) {
-          console.log(`✅ Found verse via ESV API`);
-          return {
-            text: text.trim(),
-            reference: reference
-          };
+        // getBible returns JSONP, need to parse it
+        const jsonMatch = text.match(/\((.*)\);?$/);
+        if (jsonMatch) {
+          const data = JSON.parse(jsonMatch[1]);
+          const book = Object.keys(data.book)[0];
+          const chapter = Object.keys(data.book[book].chapter)[0];
+          const verses = data.book[book].chapter[chapter];
+          
+          if (verses && Object.keys(verses).length > 0) {
+            const verseTexts = Object.values(verses).map(v => v.verse).join(' ');
+            console.log(`✅ Found verse via getBible.net`);
+            return {
+              text: verseTexts.trim(),
+              reference: reference
+            };
+          }
         }
       }
     } catch (error) {
-      console.log(`⚠️ ESV API failed: ${error.message}`);
+      console.log(`⚠️ getBible.net failed: ${error.message}`);
     }
     
     console.log(`❌ Could not find verse: ${reference}`);

@@ -250,9 +250,35 @@ export default function Home() {
       const altResponse = await fetch(`https://labs.bible.org/api/?passage=${encodeURIComponent(cleanRef)}&type=json`);
       
       if (altResponse.ok) {
-        const altData = await altResponse.json();
+      // Try multiple Bible APIs directly as fallback
         
-        if (altData && altData[0] && altData[0].text) {
+        console.log(`🌐 Trying Bible.com API directly for: ${reference}`);
+        const bibleComResponse = await fetch(`https://www.bible.com/json/bible/verse/${encodeURIComponent(reference)}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; BibleApp/1.0)',
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (bibleComResponse.ok) {
+          const data = await bibleComResponse.json();
+          if (data.verse && data.verse.text) {
+            console.log(`✅ Bible.com direct success: ${data.verse.reference}`);
+            setSelectedVerse({
+              reference: data.verse.reference || reference,
+              text: data.verse.text,
+              isLoading: false
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.log(`⚠️ Bible.com direct failed: ${error.message}`);
+      }
+      
+      // Try bible-api.com as backup
+      try {
+        console.log(`🌐 Trying bible-api.com directly for: ${reference}`);
           return {
             reference: `${altData[0].bookname} ${altData[0].chapter}:${altData[0].verse}`,
             text: altData[0].text.trim()
