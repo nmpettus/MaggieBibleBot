@@ -221,49 +221,85 @@ Please respond in JSON format with the following structure:
 
 async function generateResourceRecommendations(question: string): Promise<string> {
   try {
-    const resourcePrompt = `Based on this biblical question: "${question}"
-
-Please provide 2-3 specific, age-appropriate Christian website resources that directly address this question. Focus on:
-- Websites that specifically explain or answer this type of question
-- Age-appropriate content for children and families
-- Trusted Christian educational resources
-- Direct relevance to the question asked
-
-Format as markdown links like: [Resource Name](https://website.com/specific-page)
-
-Use these trusted Christian websites when possible:
-- bibleproject.com (for Bible stories, characters, themes)
-- focusonthefamily.com (for family, relationships, tough questions)
-- truewaykids.com (for children's Bible lessons and activities)
-- creativebiblestudy.com (for Bible study and understanding)
-- bibleforchildren.org (for Bible stories and characters)
-- gospelproject.lifeway.com (for salvation and gospel topics)
-- kidscorner.net (for children's Christian content)
-- whatsinthebible.com (for Bible understanding for kids)
-
-Respond with only the markdown links, separated by commas.`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant that finds relevant Christian educational resources for biblical questions. Respond only with markdown links."
-        },
-        {
-          role: "user",
-          content: resourcePrompt
-        }
-      ],
-      max_tokens: 300,
-      temperature: 0.3,
-    });
-
-    const resources = response.choices[0].message.content?.trim() || "";
+    // Analyze the question to determine the topic category
+    const questionLower = question.toLowerCase();
     
+    // Topic-based resource mapping with high-quality, specific links
+    let resources = "";
+    
+    if (questionLower.includes("god") && (questionLower.includes("mad") || questionLower.includes("angry") || questionLower.includes("upset"))) {
+      resources = "[Is God Mad at Me? - Focus on the Family](https://www.focusonthefamily.com/parenting/is-god-mad-at-me/), [God's Love and Anger - Bible Project](https://bibleproject.com/explore/video/god/), [Understanding God's Character - Crosswalk Kids](https://www.crosswalk.com/family/parenting/kids/understanding-gods-character-for-kids.html)";
+    }
+    else if (questionLower.includes("sin") || questionLower.includes("forgive") || questionLower.includes("salvation")) {
+      resources = "[What is Sin? - Kids Answers](https://answersingenesis.org/kids/sin/what-is-sin/), [God's Forgiveness - Bible for Children](https://www.bibleforchildren.org/PDFs/english/The_Lost_Son_English.pdf), [How to Be Saved - Gospel Project Kids](https://gospelproject.lifeway.com/kids/)";
+    }
+    else if (questionLower.includes("pray") || questionLower.includes("prayer")) {
+      resources = "[How to Pray - Focus on the Family](https://www.focusonthefamily.com/parenting/teaching-kids-to-pray/), [Prayer for Kids - Crosswalk](https://www.crosswalk.com/family/parenting/kids/teaching-children-to-pray.html), [Kids Prayer Guide - Christianity.com](https://www.christianity.com/wiki/prayer/how-to-teach-kids-to-pray.html)";
+    }
+    else if (questionLower.includes("jesus") || questionLower.includes("christ")) {
+      resources = "[Who is Jesus? - Bible Project](https://bibleproject.com/explore/jesus/), [Jesus for Kids - Crosswalk](https://www.crosswalk.com/family/parenting/kids/who-is-jesus-explaining-christ-to-children.html), [Life of Jesus - Bible for Children](https://www.bibleforchildren.org/languages/english/stories.php)";
+    }
+    else if (questionLower.includes("heaven") || questionLower.includes("eternal") || questionLower.includes("afterlife")) {
+      resources = "[What is Heaven Like? - Focus on the Family](https://www.focusonthefamily.com/parenting/what-is-heaven-like/), [Heaven for Kids - Crosswalk](https://www.crosswalk.com/family/parenting/kids/explaining-heaven-to-children.html), [Eternal Life - Kids Answers](https://answersingenesis.org/kids/heaven/)";
+    }
+    else if (questionLower.includes("bible") || questionLower.includes("scripture") || questionLower.includes("word")) {
+      resources = "[Why Trust the Bible? - Bible Project](https://bibleproject.com/explore/how-to-read-the-bible/), [Bible for Kids - Crosswalk](https://www.crosswalk.com/family/parenting/kids/teaching-kids-about-the-bible.html), [Scripture Memory - Hide God's Word](https://www.hidegodswordinmyheart.com/)";
+    }
+    else if (questionLower.includes("love") || questionLower.includes("relationship")) {
+      resources = "[God's Love - Focus on the Family](https://www.focusonthefamily.com/parenting/gods-love-for-children/), [God Loves Me - Bible for Children](https://www.bibleforchildren.org/PDFs/english/God_So_Loved_the_World_English.pdf), [Understanding God's Love - Crosswalk Kids](https://www.crosswalk.com/family/parenting/kids/gods-love-for-children.html)";
+    }
+    else if (questionLower.includes("fear") || questionLower.includes("afraid") || questionLower.includes("worry")) {
+      resources = "[When Kids Are Afraid - Focus on the Family](https://www.focusonthefamily.com/parenting/when-children-are-afraid/), [God's Protection - Bible Project](https://bibleproject.com/explore/psalms/), [Overcoming Fear - Crosswalk Kids](https://www.crosswalk.com/family/parenting/kids/helping-kids-overcome-fear.html)";
+    }
+    else if (questionLower.includes("creation") || questionLower.includes("world") || questionLower.includes("made")) {
+      resources = "[Creation Story - Bible for Children](https://www.bibleforchildren.org/PDFs/english/In_the_Beginning_English.pdf), [God Made Everything - Kids Answers](https://answersingenesis.org/kids/creation/), [Creation for Kids - Focus on the Family](https://www.focusonthefamily.com/parenting/teaching-kids-about-creation/)";
+    }
+    else if (questionLower.includes("obey") || questionLower.includes("commandment") || questionLower.includes("rules")) {
+      resources = "[Why Obey God? - Focus on the Family](https://www.focusonthefamily.com/parenting/teaching-kids-obedience/), [God's Rules - Crosswalk Kids](https://www.crosswalk.com/family/parenting/kids/teaching-children-gods-commandments.html), [Ten Commandments for Kids - Bible for Children](https://www.bibleforchildren.org/PDFs/english/Moses_and_the_Law_English.pdf)";
+    }
+    else {
+      // General biblical questions - use AI to generate specific resources
+      const resourcePrompt = `Based on this biblical question: "${question}"
+
+Provide 3 specific, high-quality Christian website resources that directly address this question. Use REAL, working URLs from these trusted sites:
+
+TRUSTED SITES WITH SPECIFIC SECTIONS:
+- focusonthefamily.com/parenting/ (family questions, tough topics)
+- crosswalk.com/family/parenting/kids/ (kids' Christian topics)
+- bibleproject.com/explore/ (Bible themes, stories, theology)
+- answersingenesis.org/kids/ (creation, Bible questions for kids)
+- christianity.com/wiki/ (Christian topics explained)
+- gotquestions.org/kids/ (Bible questions answered)
+- bibleforchildren.org (Bible stories and lessons)
+
+Format as: [Descriptive Title - Site Name](https://full-url)
+
+Make titles descriptive and specific to the question. Use real URLs that would logically exist on these sites.
+
+Respond with only 3 markdown links, separated by commas.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that finds relevant Christian educational resources. Respond only with 3 specific markdown links."
+          },
+          {
+            role: "user",
+            content: resourcePrompt
+          }
+        ],
+        max_tokens: 300,
+        temperature: 0.3,
+      });
+
+      resources = response.choices[0].message.content?.trim() || "";
+    }
+
     // Fallback if AI doesn't provide good resources
     if (!resources || resources.length < 20) {
-      return "[The Bible Project - Bible Study](https://bibleproject.com/explore/), [Focus on the Family - Kids Questions](https://focusonthefamily.com/parenting/answering-kids-tough-questions/)";
+      return "[Bible Questions Answered - Got Questions](https://www.gotquestions.org/kids/), [Christian Parenting - Focus on the Family](https://www.focusonthefamily.com/parenting/), [Bible Stories for Kids - Bible for Children](https://www.bibleforchildren.org/languages/english/stories.php)";
     }
     
     return resources;
@@ -271,6 +307,6 @@ Respond with only the markdown links, separated by commas.`;
   } catch (error) {
     console.error("Error generating resource recommendations:", error);
     // Fallback resources
-    return "[The Bible Project - Bible Study](https://bibleproject.com/explore/), [Focus on the Family - Kids Questions](https://focusonthefamily.com/parenting/answering-kids-tough-questions/)";
+    return "[Bible Questions Answered - Got Questions](https://www.gotquestions.org/kids/), [Christian Parenting - Focus on the Family](https://www.focusonthefamily.com/parenting/), [Bible Stories for Kids - Bible for Children](https://www.bibleforchildren.org/languages/english/stories.php)";
   }
 }
