@@ -58,26 +58,8 @@ export interface BiblicalResponse {
 
 export async function askMaggieBibleQuestion(question: string): Promise<BiblicalResponse> {
   try {
-    // Analyze the question to determine topic for smart resource recommendations
-    const questionLower = question.toLowerCase();
-    let resourceRecommendations = "";
-    
-    if (questionLower.includes('salvation') || questionLower.includes('saved') || questionLower.includes('gospel') || questionLower.includes('eternal life')) {
-      resourceRecommendations = "[Gospel Project for Kids](https://gospelproject.lifeway.com/kids/), [Bible for Children - Salvation Stories](https://bibleforchildren.org/languages/english/stories/nt/salvation)";
-    } else if (questionLower.includes('bible story') || questionLower.includes('character') || questionLower.includes('david') || questionLower.includes('moses') || questionLower.includes('noah')) {
-      resourceRecommendations = "[The Bible Project - Bible Stories](https://bibleproject.com/explore/video/), [Trueway Kids - Bible Characters](https://truewaykids.com/bible-characters/)";
-    } else if (questionLower.includes('prayer') || questionLower.includes('worship') || questionLower.includes('praise')) {
-      resourceRecommendations = "[Focus on the Family - Prayer for Kids](https://focusonthefamily.com/parenting/age-appropriate-chores/prayer-for-kids/), [Creative Bible Study - Prayer Activities](https://creativebiblestudy.com/prayer-activities-for-kids/)";
-    } else if (questionLower.includes('family') || questionLower.includes('parent') || questionLower.includes('relationship') || questionLower.includes('love')) {
-      resourceRecommendations = "[Focus on the Family - Christian Parenting](https://focusonthefamily.com/parenting/), [Trueway Kids - Family Devotions](https://truewaykids.com/family-devotions/)";
-    } else if (questionLower.includes('god') && (questionLower.includes('love') || questionLower.includes('care'))) {
-      resourceRecommendations = "[Bible for Children - God's Love Stories](https://bibleforchildren.org/languages/english/stories/), [The Bible Project - God's Character](https://bibleproject.com/explore/god/)";
-    } else if (questionLower.includes('difficult') || questionLower.includes('hard') || questionLower.includes('understand') || questionLower.includes('why')) {
-      resourceRecommendations = "[Creative Bible Study - Tough Questions](https://creativebiblestudy.com/tough-bible-questions/), [Focus on the Family - Answering Kids' Questions](https://focusonthefamily.com/parenting/answering-kids-tough-questions/)";
-    } else {
-      // Default recommendations for general questions
-      resourceRecommendations = "[The Bible Project - Bible Overview](https://bibleproject.com/explore/), [Trueway Kids - Bible Lessons](https://truewaykids.com/bible-lessons/)";
-    }
+    // Get AI-generated resource recommendations based on the specific question
+    const resourceRecommendations = await generateResourceRecommendations(question);
 
     const prompt = `You are Maggie, a friendly and wise dog who provides biblical guidance based on the New Testament covenant of Grace and God's Love as taught by Tim Keller, Andrew Farley, and other grace-centered theologians.
 
@@ -234,5 +216,61 @@ Please respond in JSON format with the following structure:
   } catch (error) {
     console.error("OpenAI API error:", error);
     throw new Error("I'm having trouble accessing my biblical knowledge right now. Please try again in a moment!");
+  }
+}
+
+async function generateResourceRecommendations(question: string): Promise<string> {
+  try {
+    const resourcePrompt = `Based on this biblical question: "${question}"
+
+Please provide 2-3 specific, age-appropriate Christian website resources that directly address this question. Focus on:
+- Websites that specifically explain or answer this type of question
+- Age-appropriate content for children and families
+- Trusted Christian educational resources
+- Direct relevance to the question asked
+
+Format as markdown links like: [Resource Name](https://website.com/specific-page)
+
+Use these trusted Christian websites when possible:
+- bibleproject.com (for Bible stories, characters, themes)
+- focusonthefamily.com (for family, relationships, tough questions)
+- truewaykids.com (for children's Bible lessons and activities)
+- creativebiblestudy.com (for Bible study and understanding)
+- bibleforchildren.org (for Bible stories and characters)
+- gospelproject.lifeway.com (for salvation and gospel topics)
+- kidscorner.net (for children's Christian content)
+- whatsinthebible.com (for Bible understanding for kids)
+
+Respond with only the markdown links, separated by commas.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant that finds relevant Christian educational resources for biblical questions. Respond only with markdown links."
+        },
+        {
+          role: "user",
+          content: resourcePrompt
+        }
+      ],
+      max_tokens: 300,
+      temperature: 0.3,
+    });
+
+    const resources = response.choices[0].message.content?.trim() || "";
+    
+    // Fallback if AI doesn't provide good resources
+    if (!resources || resources.length < 20) {
+      return "[The Bible Project - Bible Study](https://bibleproject.com/explore/), [Focus on the Family - Kids Questions](https://focusonthefamily.com/parenting/answering-kids-tough-questions/)";
+    }
+    
+    return resources;
+    
+  } catch (error) {
+    console.error("Error generating resource recommendations:", error);
+    // Fallback resources
+    return "[The Bible Project - Bible Study](https://bibleproject.com/explore/), [Focus on the Family - Kids Questions](https://focusonthefamily.com/parenting/answering-kids-tough-questions/)";
   }
 }
