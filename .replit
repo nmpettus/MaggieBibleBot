@@ -36,4 +36,4 @@ args = "npm run dev"
 waitForPort = 5000
 
 [env]
-OPENAI_API_KEY = "sk-proj-your-actual-openai-api-key-here"
+OPENAI_API_KEY = "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"
