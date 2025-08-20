@@ -58,6 +58,11 @@ export interface BiblicalResponse {
 
 export async function askMaggieBibleQuestion(question: string): Promise<BiblicalResponse> {
   try {
+    // Check if API key is properly configured
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here' || process.env.OPENAI_API_KEY.startsWith('sk-proj-your-actual')) {
+      throw new Error("OpenAI API key is not properly configured. Please set a valid OPENAI_API_KEY in your environment variables.");
+    }
+
     // Get AI-generated resource recommendations based on the specific question
     const resourceRecommendations = await generateResourceRecommendations(question);
 
