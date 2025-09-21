@@ -45,15 +45,23 @@ function getBibleVerse(reference: string): string | null {
   return null;
 }
 
-// Validate API key before instantiating OpenAI client
-if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here' || process.env.OPENAI_API_KEY.startsWith('sk-proj-your-actual')) {
-  throw new Error("OpenAI API key is not properly configured. Please set a valid OPENAI_API_KEY in your environment variables.");
-}
+// Lazy initialization of OpenAI client
+let openai: OpenAI | null = null;
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY
-});
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    // Validate API key before instantiating OpenAI client
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here' || process.env.OPENAI_API_KEY.startsWith('sk-proj-your-actual')) {
+      throw new Error("OpenAI API key is not properly configured. Please set a valid OPENAI_API_KEY in your environment variables.");
+    }
+    
+    // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    openai = new OpenAI({ 
+      apiKey: process.env.OPENAI_API_KEY
+    });
+  }
+  return openai;
+}
 
 export interface BiblicalResponse {
   answer: string;
@@ -65,6 +73,8 @@ export async function askMaggieBibleQuestion(question: string): Promise<Biblical
   try {
     // Get AI-generated resource recommendations based on the specific question
     const resourceRecommendations = await generateResourceRecommendations(question);
+
+    const openaiClient = getOpenAIClient();
 
     const prompt = `You are Maggie, a friendly and wise dog who provides biblical guidance based on the New Testament covenant of Grace and God's Love as taught by Tim Keller, Andrew Farley, and other grace-centered theologians.
 
@@ -92,7 +102,7 @@ Please respond in JSON format with the following structure:
   "recommendedResources": "${resourceRecommendations}"
 }`;
 
-    const response = await openai.chat.completions.create({
+    const response = await openaiClient.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -283,7 +293,7 @@ Make titles descriptive and specific to the question. Use real URLs that would l
 
 Respond with only 3 markdown links, separated by commas.`;
 
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAIClient().chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
